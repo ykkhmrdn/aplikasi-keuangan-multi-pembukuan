@@ -3,6 +3,7 @@
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\Kategori\Index as KategoriIndex;
+use App\Livewire\Transaksi\Index as TransaksiIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -20,3 +21,5 @@ Route::post('/logout', function () {
 Route::get('/', Dashboard::class)->middleware('auth')->name('dashboard');
 
 Route::get('/kategori', KategoriIndex::class)->middleware('auth')->name('kategori.index');
+
+Route::get('/transaksi/{pembukuan}', TransaksiIndex::class)->middleware('auth')->name('transaksi.index');

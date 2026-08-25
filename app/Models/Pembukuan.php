@@ -24,6 +24,12 @@ class Pembukuan extends Model
         ];
     }
 
+    /** Route model binding pakai tipe (pribadi/usaha/kantor), bukan id, biar URL rapi. */
+    public function getRouteKeyName(): string
+    {
+        return 'tipe';
+    }
+
     public function kategori(): HasMany
     {
         return $this->hasMany(Kategori::class);
