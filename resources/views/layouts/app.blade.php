@@ -12,8 +12,19 @@
     </head>
     <body class="min-h-screen bg-slate-50">
         <nav class="bg-white border-b border-slate-200">
-            <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-                <span class="font-semibold text-slate-900">{{ config('app.name') }}</span>
+            <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4 min-w-0">
+                    <span class="font-semibold text-slate-900 shrink-0">{{ config('app.name') }}</span>
+
+                    <div class="flex gap-3 text-sm">
+                        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'text-slate-900 font-medium' : 'text-slate-500 hover:text-slate-800' }}">
+                            Dashboard
+                        </a>
+                        <a href="{{ route('kategori.index') }}" class="{{ request()->routeIs('kategori.*') ? 'text-slate-900 font-medium' : 'text-slate-500 hover:text-slate-800' }}">
+                            Kategori
+                        </a>
+                    </div>
+                </div>
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

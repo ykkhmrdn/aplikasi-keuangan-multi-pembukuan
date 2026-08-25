@@ -2,6 +2,7 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
+use App\Livewire\Kategori\Index as KategoriIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +18,5 @@ Route::post('/logout', function () {
 })->middleware('auth')->name('logout');
 
 Route::get('/', Dashboard::class)->middleware('auth')->name('dashboard');
+
+Route::get('/kategori', KategoriIndex::class)->middleware('auth')->name('kategori.index');
