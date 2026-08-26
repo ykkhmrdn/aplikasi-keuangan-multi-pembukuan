@@ -141,6 +141,24 @@ class IndexTest extends TestCase
             ->assertHasErrors(['jumlah']);
     }
 
+    public function test_tanggal_yang_gak_masuk_akal_ditolak(): void
+    {
+        // batas 10 tahun ke belakang & 1 tahun ke depan, buat nangkep typo tahun
+        // (mis. 2026 keketik jadi 3026), bukan larangan backdate wajar
+        $this->actingAs(User::factory()->create());
+        $pembukuan = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+
+        Livewire::test(Index::class, ['pembukuan' => $pembukuan])
+            ->call('tambah')
+            ->set('tipe', TipeTransaksi::Pemasukan->value)
+            ->set('kategoriId', (string) $kategori->id)
+            ->set('jumlah', '50000')
+            ->set('tanggal', now()->addYears(5)->format('Y-m-d'))
+            ->call('simpan')
+            ->assertHasErrors(['tanggal']);
+    }
+
     public function test_user_bisa_edit_transaksi(): void
     {
         $this->actingAs(User::factory()->create());

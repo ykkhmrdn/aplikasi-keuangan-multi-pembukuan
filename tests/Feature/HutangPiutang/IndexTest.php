@@ -116,6 +116,37 @@ class IndexTest extends TestCase
             ->assertHasErrors(['jumlah']);
     }
 
+    public function test_tanggal_bon_yang_gak_masuk_akal_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('tambah')
+            ->set('dariPembukuanId', (string) $pribadi->id)
+            ->set('kePembukuanId', (string) $kantor->id)
+            ->set('jumlah', '100000')
+            ->set('tanggal', now()->addYears(5)->format('Y-m-d'))
+            ->call('simpan')
+            ->assertHasErrors(['tanggal']);
+    }
+
+    public function test_tanggal_pelunasan_yang_gak_masuk_akal_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('melunasi', $hp->id)
+            ->set('tanggalPelunasan', now()->subYears(15)->format('Y-m-d'))
+            ->call('simpanPelunasan')
+            ->assertHasErrors(['tanggalPelunasan']);
+    }
+
     public function test_jumlah_pelunasan_nol_ditolak(): void
     {
         $this->actingAs(User::factory()->create());

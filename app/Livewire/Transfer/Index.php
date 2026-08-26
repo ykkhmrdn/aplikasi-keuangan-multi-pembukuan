@@ -97,7 +97,9 @@ class Index extends Component
                 },
             ],
             'jumlah' => ['required', 'numeric', 'min:0.01'],
-            'tanggal' => ['required', 'date'],
+            // batas 10 tahun ke belakang & 1 tahun ke depan, cuma nangkep typo tahun,
+            // bukan larangan backdate (lihat alasan lengkap di docs/DECISION_LOG.md)
+            'tanggal' => ['required', 'date', 'after_or_equal:'.now()->subYears(10)->format('Y-m-d'), 'before_or_equal:'.now()->addYear()->format('Y-m-d')],
             'keterangan' => ['nullable', 'string', 'max:1000'],
         ], [], [
             'dariPembukuanId' => 'pembukuan asal',

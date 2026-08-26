@@ -9,7 +9,7 @@ return [
     'accepted_if' => ':attribute wajib disetujui kalau :other bernilai :value.',
     'active_url' => ':attribute harus berupa URL yang valid.',
     'after' => ':attribute harus tanggal setelah :date.',
-    'after_or_equal' => ':attribute harus tanggal setelah atau sama dengan :date.',
+    'after_or_equal' => ':attribute tidak boleh sebelum :date.',
     'alpha' => ':attribute cuma boleh berisi huruf.',
     'alpha_dash' => ':attribute cuma boleh berisi huruf, angka, strip, dan garis bawah.',
     'alpha_num' => ':attribute cuma boleh berisi huruf dan angka.',
@@ -19,7 +19,7 @@ return [
     'ascii' => ':attribute cuma boleh berisi karakter alfanumerik dan simbol single-byte.',
     'base64' => ':attribute harus berupa string Base64 yang valid.',
     'before' => ':attribute harus tanggal sebelum :date.',
-    'before_or_equal' => ':attribute harus tanggal sebelum atau sama dengan :date.',
+    'before_or_equal' => ':attribute tidak boleh setelah :date.',
     'between' => [
         'array' => ':attribute harus punya :min sampai :max item.',
         'file' => ':attribute harus antara :min sampai :max kilobyte.',

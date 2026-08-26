@@ -178,7 +178,10 @@ class Index extends Component
                 },
             ],
             'jumlah' => ['required', 'numeric', 'min:0.01'],
-            'tanggal' => ['required', 'date'],
+            // batas 10 tahun ke belakang & 1 tahun ke depan - bukan larangan backdate/rencana
+            // ke depan (itu wajar di pencatatan keuangan), cuma nangkep typo tahun (mis. 2026
+            // ketik jadi 3026), bukan validasi bisnis yang ketat
+            'tanggal' => ['required', 'date', 'after_or_equal:'.now()->subYears(10)->format('Y-m-d'), 'before_or_equal:'.now()->addYear()->format('Y-m-d')],
             'keterangan' => ['nullable', 'string', 'max:1000'],
         ], [], [
             'tipe' => 'tipe',
