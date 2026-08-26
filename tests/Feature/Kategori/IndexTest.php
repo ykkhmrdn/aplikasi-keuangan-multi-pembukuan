@@ -51,6 +51,26 @@ class IndexTest extends TestCase
         ]);
     }
 
+    public function test_tambah_kategori_tanpa_menyentuh_dropdown_tipe_dan_pembukuan_tetap_berhasil(): void
+    {
+        // regresi: dulu tipe gak ke-set default (cuma reset() ke null) walau dropdown-nya
+        // visual udah keliatan "Pemasukan" terpilih - user yang gak sentuh dropdown sama
+        // sekali (alur paling wajar) bakal ketolak validasi "tipe wajib diisi"
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(Index::class)
+            ->call('tambah')
+            ->set('nama', 'Kategori Tanpa Sentuh Dropdown')
+            ->call('simpan')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('kategori', [
+            'nama' => 'Kategori Tanpa Sentuh Dropdown',
+            'tipe' => 'pemasukan',
+            'pembukuan_id' => null,
+        ]);
+    }
+
     public function test_user_bisa_tambah_kategori_khusus_satu_pembukuan(): void
     {
         $this->actingAs(User::factory()->create());

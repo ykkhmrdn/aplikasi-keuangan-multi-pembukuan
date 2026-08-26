@@ -54,6 +54,32 @@ class LoginTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_login_terkunci_sementara_setelah_gagal_berkali_kali(): void
+    {
+        User::factory()->create([
+            'username' => 'admin',
+            'password' => 'rahasia123',
+        ]);
+
+        // 5 kali gagal berturut-turut (batas maksimal)
+        for ($i = 0; $i < 5; $i++) {
+            Livewire::test(Login::class)
+                ->set('username', 'admin')
+                ->set('password', 'password-salah')
+                ->call('login')
+                ->assertHasErrors('username');
+        }
+
+        // percobaan ke-6, walau password BENAR, tetap ditolak karena kekunci
+        Livewire::test(Login::class)
+            ->set('username', 'admin')
+            ->set('password', 'rahasia123')
+            ->call('login')
+            ->assertHasErrors('username');
+
+        $this->assertGuest();
+    }
+
     public function test_user_yang_sudah_login_diarahkan_keluar_dari_halaman_login(): void
     {
         $user = User::factory()->create();

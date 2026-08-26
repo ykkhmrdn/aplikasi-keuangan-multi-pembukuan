@@ -205,6 +205,11 @@ class Index extends Component
     private function resetForm(): void
     {
         $this->reset(['editingId', 'editingLocked', 'nama', 'tipe', 'pembukuanId']);
+        // tipe di-set eksplisit (bukan cuma andalkan default null lewat reset()) supaya
+        // pilihan pertama di dropdown ("Pemasukan") beneran kesimpan kalau user gak
+        // sentuh dropdown-nya sama sekali - dropdown visualnya udah keliatan terisi
+        // sejak awal, jadi property-nya juga harus beneran senilai itu dari awal.
+        $this->tipe = TipeTransaksi::Pemasukan->value;
         $this->pembukuanId = 'global';
         $this->resetValidation();
     }
