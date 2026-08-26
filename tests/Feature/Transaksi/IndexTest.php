@@ -206,4 +206,83 @@ class IndexTest extends TestCase
             ->assertSee('200.000')
             ->assertDontSee('100.000');
     }
+
+    public function test_pencarian_menyaring_transaksi_berdasarkan_keterangan_atau_kategori(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pembukuan = $this->buatPembukuan();
+        $gaji = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+        $belanja = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pembukuan->id, 'kategori_id' => $gaji->id,
+            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 100000, 'tanggal' => now(), 'keterangan' => 'gaji bulan ini',
+        ]);
+        Transaksi::create([
+            'pembukuan_id' => $pembukuan->id, 'kategori_id' => $belanja->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 50000, 'tanggal' => now(), 'keterangan' => 'jajan',
+        ]);
+
+        Livewire::test(Index::class, ['pembukuan' => $pembukuan])
+            ->set('search', 'gaji')
+            ->assertSee('100.000')
+            ->assertDontSee('50.000');
+    }
+
+    public function test_pencarian_reset_ke_halaman_pertama(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pembukuan = $this->buatPembukuan();
+
+        Livewire::test(Index::class, ['pembukuan' => $pembukuan])
+            ->call('setPage', 2)
+            ->set('search', 'apa saja')
+            ->assertSet('paginators.page', 1);
+    }
+
+    public function test_urutan_jumlah_terbesar_menampilkan_transaksi_besar_lebih_dulu(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pembukuan = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pembukuan->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 100000, 'tanggal' => now(),
+        ]);
+        Transaksi::create([
+            'pembukuan_id' => $pembukuan->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 900000, 'tanggal' => now(),
+        ]);
+
+        $html = Livewire::test(Index::class, ['pembukuan' => $pembukuan])
+            ->set('sort', 'jumlah_terbesar')
+            ->html();
+
+        $this->assertTrue(strpos($html, '900.000') < strpos($html, '100.000'));
+    }
+
+    public function test_daftar_transaksi_dipaginasi_10_per_halaman(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pembukuan = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+
+        // keterangan dipadding 2 digit biar assertSee/assertDontSee gak ketuker substring (mis. "ke-1" ada di dalam "ke-10")
+        // tanggal beda tiap transaksi biar urutan default (tanggal terbaru) konsisten dan bisa diprediksi
+        foreach (range(1, 15) as $i) {
+            Transaksi::create([
+                'pembukuan_id' => $pembukuan->id, 'kategori_id' => $kategori->id,
+                'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 10000,
+                'tanggal' => now()->subDays(15 - $i), // makin besar $i, makin baru
+                'keterangan' => 'Transaksi ke-'.str_pad($i, 2, '0', STR_PAD_LEFT),
+            ]);
+        }
+
+        Livewire::test(Index::class, ['pembukuan' => $pembukuan])
+            ->assertSee('Transaksi ke-15') // transaksi terbaru, harus di halaman 1
+            ->assertDontSee('Transaksi ke-01') // transaksi terlama, harus di halaman 2
+            ->call('nextPage')
+            ->assertSee('Transaksi ke-01');
+    }
 }

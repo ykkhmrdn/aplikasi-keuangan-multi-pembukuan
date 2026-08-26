@@ -10,18 +10,25 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination;
+
     public Pembukuan $pembukuan;
 
-    // filter tampilan
+    // filter, pencarian, & urutan tampilan
     public string $filterKategori = 'semua';
 
     public string $filterDari = '';
 
     public string $filterSampai = '';
+
+    public string $search = '';
+
+    public string $sort = 'tanggal_terbaru';
 
     // state form tambah/edit
     public bool $showForm = false;
@@ -47,6 +54,31 @@ class Index extends Component
         $this->kategoriId = '';
     }
 
+    public function updatedFilterKategori(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterDari(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterSampai(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSort(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
         $query = Transaksi::query()
@@ -65,8 +97,24 @@ class Index extends Component
             $query->whereDate('tanggal', '<=', $this->filterSampai);
         }
 
+        if ($this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('keterangan', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('kategori', function ($kategoriQuery) {
+                        $kategoriQuery->where('nama', 'like', '%'.$this->search.'%');
+                    });
+            });
+        }
+
+        match ($this->sort) {
+            'tanggal_terlama' => $query->orderBy('tanggal')->orderBy('id'),
+            'jumlah_terbesar' => $query->orderByDesc('jumlah'),
+            'jumlah_terkecil' => $query->orderBy('jumlah'),
+            default => $query->orderByDesc('tanggal')->orderByDesc('id'), // tanggal_terbaru
+        };
+
         return view('livewire.transaksi.index', [
-            'transaksiList' => $query->orderByDesc('tanggal')->orderByDesc('id')->get(),
+            'transaksiList' => $query->paginate(10),
             'kategoriSemua' => $this->kategoriUntukPembukuan(),
             'tipeOptions' => TipeTransaksi::cases(),
         ]);
