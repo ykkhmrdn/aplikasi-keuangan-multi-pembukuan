@@ -38,7 +38,8 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Tipe</label>
                 <select
                     wire:model.live="tipe"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('tipe') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                     @foreach ($tipeOptions as $option)
                         <option value="{{ $option->value }}">{{ $option->label() }}</option>
@@ -51,7 +52,8 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Kategori</label>
                 <select
                     wire:model="kategoriId"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('kategoriId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                     <option value="">Pilih kategori</option>
                     @foreach ($kategoriSemua->where('tipe', \App\Enums\TipeTransaksi::from($tipe)) as $kategori)
@@ -65,11 +67,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Jumlah</label>
-                <input
-                    type="number" step="0.01" min="0"
-                    wire:model="jumlah"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                >
+                @include('livewire._input-uang', ['field' => 'jumlah'])
                 @error('jumlah') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
 
@@ -78,7 +76,8 @@
                 <input
                     type="date"
                     wire:model="tanggal"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('tanggal') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                 @error('tanggal') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -88,7 +87,8 @@
                 <textarea
                     wire:model="keterangan"
                     rows="2"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('keterangan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 ></textarea>
                 @error('keterangan') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -166,19 +166,29 @@
                         <p class="font-semibold tabular-nums break-words {{ $transaksi->tipe === \App\Enums\TipeTransaksi::Pemasukan ? 'text-emerald-700' : 'text-red-700' }}">
                             {{ $transaksi->tipe === \App\Enums\TipeTransaksi::Pemasukan ? '+' : '-' }}Rp{{ number_format($transaksi->jumlah, 0, ',', '.') }}
                         </p>
-                        <div class="mt-1 flex justify-end items-center gap-3 text-sm">
-                            <button wire:click="edit({{ $transaksi->id }})" class="text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:underline">Edit</button>
-
-                            @if ($confirmingDeleteId === $transaksi->id)
-                                <span class="inline-flex items-center gap-2 rounded-lg bg-red-50 px-2 py-1">
-                                    <span class="text-xs text-red-700">Yakin?</span>
-                                    <button wire:click="hapus({{ $transaksi->id }})" class="text-xs font-semibold text-red-700 hover:text-red-900 focus-visible:outline-none focus-visible:underline">Ya</button>
-                                    <button wire:click="batalHapus" class="text-xs text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:underline">Batal</button>
-                                </span>
-                            @else
-                                <button wire:click="confirmHapus({{ $transaksi->id }})" class="text-red-600 hover:text-red-800 focus-visible:outline-none focus-visible:underline">Hapus</button>
-                            @endif
+                        <div class="mt-1.5 flex justify-end items-center gap-2 text-sm">
+                            <button
+                                wire:click="edit({{ $transaksi->id }})"
+                                class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                wire:click="confirmHapus({{ $transaksi->id }})"
+                                class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                            >
+                                Hapus
+                            </button>
                         </div>
+
+                        @if ($confirmingDeleteId === $transaksi->id)
+                            @include('livewire._modal-konfirmasi-hapus', [
+                                'judul' => 'Hapus Transaksi',
+                                'pesan' => 'Hapus transaksi "'.$transaksi->kategori->nama.'" sebesar Rp'.number_format($transaksi->jumlah, 0, ',', '.').'? Tindakan ini tidak bisa dibatalkan.',
+                                'konfirmAction' => 'hapus('.$transaksi->id.')',
+                                'batalAction' => 'batalHapus',
+                            ])
+                        @endif
                     </div>
                 </div>
             </div>
