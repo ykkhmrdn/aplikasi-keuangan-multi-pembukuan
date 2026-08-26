@@ -1,13 +1,17 @@
 <div class="space-y-6">
-    <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Ganti Password</h1>
+    <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Akun</h1>
+
+    <livewire:auth.ubah-username />
 
     @if ($berhasil)
-        <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2.5 text-sm text-emerald-700">
+        <div class="max-w-sm rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2.5 text-sm text-emerald-700">
             Password berhasil diubah.
         </div>
     @endif
 
     <form wire:submit="simpan" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4 max-w-sm">
+        <h2 class="text-sm font-semibold text-slate-900">Ganti Password</h2>
+
         @php
             $inputClass = 'w-full rounded-lg border border-slate-300 pl-3 pr-10 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
         @endphp

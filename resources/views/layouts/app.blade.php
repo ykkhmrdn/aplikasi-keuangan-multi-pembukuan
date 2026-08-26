@@ -42,8 +42,8 @@
                     <a
                         href="{{ route('ganti-password') }}"
                         class="text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 rounded {{ request()->routeIs('ganti-password') ? 'text-slate-900' : '' }}"
-                        aria-label="Ganti Password"
-                        title="Ganti Password"
+                        aria-label="Akun"
+                        title="Akun"
                     >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-5 h-5">
                             <circle cx="12" cy="12" r="3" />
