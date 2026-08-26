@@ -31,15 +31,18 @@
                      type="date" punya lebar minimum bawaan browser yang beda-beda, kalau
                      dipaksa sebaris di kartu sempit bisa nyembul keluar dari kartu --}}
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="number" step="0.01" min="0" wire:model="jumlahPelunasan"
-                        class="w-full sm:flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                    <div class="w-full sm:flex-1">
+                        @include('livewire._input-uang', ['field' => 'jumlahPelunasan'])
+                    </div>
                     <input type="date" wire:model="tanggalPelunasan"
-                        class="w-full sm:w-auto rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                        class="w-full sm:w-auto rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2
+                            {{ $errors->has('tanggalPelunasan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}">
                 </div>
                 @error('jumlahPelunasan') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                 @error('tanggalPelunasan') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                 <input type="text" wire:model="keteranganPelunasan" placeholder="Keterangan (opsional)"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                    class="w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('keteranganPelunasan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}">
                 <div class="flex gap-2">
                     <button type="submit" wire:loading.attr="disabled" wire:target="simpanPelunasan"
                         class="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/30 disabled:opacity-50">
@@ -52,7 +55,10 @@
                 </div>
             </form>
         @else
-            <button wire:click="melunasi({{ $hp->id }})" class="mt-2 text-sm text-emerald-700 hover:text-emerald-900 font-medium focus-visible:outline-none focus-visible:underline">
+            <button
+                wire:click="melunasi({{ $hp->id }})"
+                class="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/30"
+            >
                 Catat Pelunasan
             </button>
         @endif

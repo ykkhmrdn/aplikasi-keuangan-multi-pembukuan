@@ -50,7 +50,8 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Pembukuan Pemberi (berpiutang)</label>
                 <select
                     wire:model="dariPembukuanId"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('dariPembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                     <option value="">Pilih pembukuan</option>
                     @foreach ($pembukuanList as $p)
@@ -64,7 +65,8 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Pembukuan Penerima (berutang)</label>
                 <select
                     wire:model="kePembukuanId"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('kePembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                     <option value="">Pilih pembukuan</option>
                     @foreach ($pembukuanList as $p)
@@ -76,11 +78,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Jumlah</label>
-                <input
-                    type="number" step="0.01" min="0"
-                    wire:model="jumlah"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                >
+                @include('livewire._input-uang', ['field' => 'jumlah'])
                 @error('jumlah') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
 
@@ -89,7 +87,8 @@
                 <input
                     type="date"
                     wire:model="tanggal"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('tanggal') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                 @error('tanggal') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -99,7 +98,8 @@
                 <textarea
                     wire:model="keterangan"
                     rows="2"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('keterangan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 ></textarea>
                 @error('keterangan') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
