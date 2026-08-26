@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusHutangPiutang;
 use App\Enums\TipePembukuan;
 use App\Enums\TipeTransaksi;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -66,9 +67,8 @@ class Pembukuan extends Model
     }
 
     /**
-     * Saldo dihitung dinamis, bukan kolom cache (lihat docs/DATABASE_DESIGN.md).
-     * Baru mencakup transaksi + transfer saldo. Akan dilengkapi komponen
-     * hutang-piutang & pelunasan di Tahap Hutang-Piutang.
+     * Saldo dihitung dinamis, bukan kolom cache (lihat docs/DATABASE_DESIGN.md
+     * bagian "Formula Saldo" untuk rincian lengkap tiap komponen).
      */
     public function saldo(): string
     {
@@ -76,10 +76,39 @@ class Pembukuan extends Model
         $pengeluaran = (string) $this->transaksi()->where('tipe', TipeTransaksi::Pengeluaran)->sum('jumlah');
         $transferMasuk = (string) $this->transferMasuk()->sum('jumlah');
         $transferKeluar = (string) $this->transferKeluar()->sum('jumlah');
+        // terima bon = kas masuk, kasih bon = kas keluar
+        $bonDiterima = (string) $this->hutangDiterima()->sum('jumlah');
+        $bonDiberikan = (string) $this->hutangDiberikan()->sum('jumlah');
+        // bayar utang (pelunasan atas bon yang kita terima) = kas keluar
+        $bayarUtang = (string) PelunasanHutang::whereHas(
+            'hutangPiutang', fn ($query) => $query->where('ke_pembukuan_id', $this->id)
+        )->sum('jumlah');
+        // terima pelunasan (atas bon yang kita berikan) = kas masuk
+        $terimaPelunasan = (string) PelunasanHutang::whereHas(
+            'hutangPiutang', fn ($query) => $query->where('dari_pembukuan_id', $this->id)
+        )->sum('jumlah');
 
-        $masuk = bcadd($pemasukan, $transferMasuk, 2);
-        $keluar = bcadd($pengeluaran, $transferKeluar, 2);
+        $masuk = bcadd(bcadd($pemasukan, $transferMasuk, 2), bcadd($bonDiterima, $terimaPelunasan, 2), 2);
+        $keluar = bcadd(bcadd($pengeluaran, $transferKeluar, 2), bcadd($bonDiberikan, $bayarUtang, 2), 2);
 
         return bcsub($masuk, $keluar, 2);
+    }
+
+    /** Total piutang outstanding (bon yang diberikan, belum dilunasi lawan). */
+    public function piutangOutstanding(): string
+    {
+        return $this->hutangDiberikan()
+            ->where('status', StatusHutangPiutang::BelumLunas)
+            ->get()
+            ->reduce(fn ($total, HutangPiutang $hp) => bcadd($total, $hp->sisaOutstanding(), 2), '0.00');
+    }
+
+    /** Total hutang outstanding (bon yang diterima, belum dilunasi ke lawan). */
+    public function hutangOutstanding(): string
+    {
+        return $this->hutangDiterima()
+            ->where('status', StatusHutangPiutang::BelumLunas)
+            ->get()
+            ->reduce(fn ($total, HutangPiutang $hp) => bcadd($total, $hp->sisaOutstanding(), 2), '0.00');
     }
 }

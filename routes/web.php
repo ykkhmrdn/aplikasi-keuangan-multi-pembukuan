@@ -2,6 +2,7 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
+use App\Livewire\HutangPiutang\Index as HutangPiutangIndex;
 use App\Livewire\Kategori\Index as KategoriIndex;
 use App\Livewire\Transaksi\Index as TransaksiIndex;
 use App\Livewire\Transfer\Index as TransferIndex;
@@ -26,3 +27,5 @@ Route::get('/kategori', KategoriIndex::class)->middleware('auth')->name('kategor
 Route::get('/transaksi/{pembukuan}', TransaksiIndex::class)->middleware('auth')->name('transaksi.index');
 
 Route::get('/transfer', TransferIndex::class)->middleware('auth')->name('transfer.index');
+
+Route::get('/hutang-piutang/{pembukuan}', HutangPiutangIndex::class)->middleware('auth')->name('hutang-piutang.index');

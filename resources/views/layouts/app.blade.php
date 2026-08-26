@@ -26,6 +26,9 @@
                         <a href="{{ route('transfer.index') }}" class="{{ request()->routeIs('transfer.*') ? 'text-slate-900 font-medium' : 'text-slate-500 hover:text-slate-800' }}">
                             Transfer
                         </a>
+                        <a href="{{ route('hutang-piutang.index', \App\Enums\TipePembukuan::Pribadi->value) }}" class="{{ request()->routeIs('hutang-piutang.*') ? 'text-slate-900 font-medium' : 'text-slate-500 hover:text-slate-800' }}">
+                            Hutang-Piutang
+                        </a>
                         <a href="{{ route('kategori.index') }}" class="{{ request()->routeIs('kategori.*') ? 'text-slate-900 font-medium' : 'text-slate-500 hover:text-slate-800' }}">
                             Kategori
                         </a>
