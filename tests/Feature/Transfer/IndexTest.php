@@ -91,6 +91,22 @@ class IndexTest extends TestCase
             ->assertHasErrors(['jumlah']);
     }
 
+    public function test_jumlah_transfer_negatif_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+
+        Livewire::test(Index::class)
+            ->call('tambah')
+            ->set('dariPembukuanId', (string) $pribadi->id)
+            ->set('kePembukuanId', (string) $kantor->id)
+            ->set('jumlah', '-100000')
+            ->set('tanggal', now()->format('Y-m-d'))
+            ->call('simpan')
+            ->assertHasErrors(['jumlah']);
+    }
+
     public function test_saldo_kedua_pembukuan_konsisten_setelah_transfer(): void
     {
         $this->actingAs(User::factory()->create());

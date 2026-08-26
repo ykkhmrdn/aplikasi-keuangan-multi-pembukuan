@@ -125,6 +125,22 @@ class IndexTest extends TestCase
             ->assertHasErrors(['jumlah']);
     }
 
+    public function test_jumlah_negatif_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pembukuan = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+
+        Livewire::test(Index::class, ['pembukuan' => $pembukuan])
+            ->call('tambah')
+            ->set('tipe', TipeTransaksi::Pemasukan->value)
+            ->set('kategoriId', (string) $kategori->id)
+            ->set('jumlah', '-50000')
+            ->set('tanggal', now()->format('Y-m-d'))
+            ->call('simpan')
+            ->assertHasErrors(['jumlah']);
+    }
+
     public function test_user_bisa_edit_transaksi(): void
     {
         $this->actingAs(User::factory()->create());

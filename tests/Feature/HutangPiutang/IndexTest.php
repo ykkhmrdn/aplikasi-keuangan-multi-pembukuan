@@ -5,6 +5,7 @@ namespace Tests\Feature\HutangPiutang;
 use App\Enums\StatusHutangPiutang;
 use App\Livewire\HutangPiutang\Index;
 use App\Models\HutangPiutang;
+use App\Models\PelunasanHutang;
 use App\Models\Pembukuan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -98,6 +99,85 @@ class IndexTest extends TestCase
             ->set('tanggal', now()->format('Y-m-d'))
             ->call('simpan')
             ->assertHasErrors(['jumlah']);
+    }
+
+    public function test_jumlah_bon_negatif_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('tambah')
+            ->set('dariPembukuanId', (string) $pribadi->id)
+            ->set('kePembukuanId', (string) $kantor->id)
+            ->set('jumlah', '-100000')
+            ->set('tanggal', now()->format('Y-m-d'))
+            ->call('simpan')
+            ->assertHasErrors(['jumlah']);
+    }
+
+    public function test_jumlah_pelunasan_nol_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('melunasi', $hp->id)
+            ->set('jumlahPelunasan', '0')
+            ->call('simpanPelunasan')
+            ->assertHasErrors(['jumlahPelunasan']);
+
+        $this->assertEquals('500000.00', $hp->fresh()->sisaOutstanding());
+    }
+
+    public function test_jumlah_pelunasan_negatif_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('melunasi', $hp->id)
+            ->set('jumlahPelunasan', '-50000')
+            ->call('simpanPelunasan')
+            ->assertHasErrors(['jumlahPelunasan']);
+
+        $this->assertEquals('500000.00', $hp->fresh()->sisaOutstanding());
+    }
+
+    public function test_pelunasan_dicek_ulang_terhadap_sisa_terbaru_bukan_nilai_lama(): void
+    {
+        // simulasi race condition: sisa outstanding berubah (lewat pelunasan lain) SETELAH
+        // form pelunasan dibuka tapi SEBELUM disubmit - lockForUpdate + re-check di dalam
+        // transaction harus pakai sisa TERBARU, bukan snapshot lama waktu form dibuka
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        $component = Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('melunasi', $hp->id)
+            ->assertSet('jumlahPelunasan', '500000.00');
+
+        // "pelunasan lain" masuk duluan di antara form dibuka dan disubmit (simulasi request bersamaan)
+        PelunasanHutang::create([
+            'hutang_piutang_id' => $hp->id, 'jumlah' => 400000, 'tanggal' => now(),
+        ]);
+
+        // form yang sudah kepalang keisi 500000 (sisa lama) disubmit - harus ditolak
+        // karena sisa terbaru cuma 100000, bukan malah lolos dan bikin sisa jadi minus
+        $component->call('simpanPelunasan')->assertHasErrors(['jumlahPelunasan']);
+
+        $this->assertEquals('100000.00', $hp->fresh()->sisaOutstanding());
     }
 
     public function test_pelunasan_penuh_mengubah_status_jadi_lunas(): void
