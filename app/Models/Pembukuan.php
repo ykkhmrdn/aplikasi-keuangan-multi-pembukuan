@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TipePembukuan;
+use App\Enums\TipeTransaksi;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -62,5 +63,23 @@ class Pembukuan extends Model
     public function hutangDiterima(): HasMany
     {
         return $this->hasMany(HutangPiutang::class, 'ke_pembukuan_id');
+    }
+
+    /**
+     * Saldo dihitung dinamis, bukan kolom cache (lihat docs/DATABASE_DESIGN.md).
+     * Baru mencakup transaksi + transfer saldo. Akan dilengkapi komponen
+     * hutang-piutang & pelunasan di Tahap Hutang-Piutang.
+     */
+    public function saldo(): string
+    {
+        $pemasukan = (string) $this->transaksi()->where('tipe', TipeTransaksi::Pemasukan)->sum('jumlah');
+        $pengeluaran = (string) $this->transaksi()->where('tipe', TipeTransaksi::Pengeluaran)->sum('jumlah');
+        $transferMasuk = (string) $this->transferMasuk()->sum('jumlah');
+        $transferKeluar = (string) $this->transferKeluar()->sum('jumlah');
+
+        $masuk = bcadd($pemasukan, $transferMasuk, 2);
+        $keluar = bcadd($pengeluaran, $transferKeluar, 2);
+
+        return bcsub($masuk, $keluar, 2);
     }
 }

@@ -4,6 +4,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\Kategori\Index as KategoriIndex;
 use App\Livewire\Transaksi\Index as TransaksiIndex;
+use App\Livewire\Transfer\Index as TransferIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -23,3 +24,5 @@ Route::get('/', Dashboard::class)->middleware('auth')->name('dashboard');
 Route::get('/kategori', KategoriIndex::class)->middleware('auth')->name('kategori.index');
 
 Route::get('/transaksi/{pembukuan}', TransaksiIndex::class)->middleware('auth')->name('transaksi.index');
+
+Route::get('/transfer', TransferIndex::class)->middleware('auth')->name('transfer.index');
