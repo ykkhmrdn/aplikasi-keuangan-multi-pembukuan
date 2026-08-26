@@ -7,6 +7,12 @@
         @foreach ($pembukuanList as $p)
             @php
                 $aktif = $pembukuanTerpilih->id === $p->id;
+                $saldo = $p->saldo();
+                // saldo minus tetap boleh (bukan salah otomatis - bisa defisit beneran atau
+                // input transaksi gak urut tanggal), tapi tetap harus keliatan jelas, bukan
+                // didiemin pakai warna sama kayak saldo positif
+                $saldoMinus = bccomp($saldo, '0', 2) < 0;
+                $saldoAbs = $saldoMinus ? bcmul($saldo, '-1', 2) : $saldo;
                 $accent = match ($p->tipe) {
                     \App\Enums\TipePembukuan::Pribadi => ['dot' => 'bg-indigo-500', 'bar' => 'bg-indigo-500', 'ring' => 'ring-indigo-500/30', 'border' => 'border-indigo-300'],
                     \App\Enums\TipePembukuan::Usaha => ['dot' => 'bg-teal-500', 'bar' => 'bg-teal-500', 'ring' => 'ring-teal-500/30', 'border' => 'border-teal-300'],
@@ -25,9 +31,12 @@
                 </p>
                 {{-- break-words + min-w-0 di button: angka gede (ratusan juta+) gak punya spasi
                      buat wrap alami, tanpa ini bisa overflow kepotong di grid 3 kolom sempit --}}
-                <p class="mt-1 font-semibold text-slate-900 text-sm sm:text-base tabular-nums break-words">
-                    Rp{{ number_format($p->saldo(), 0, ',', '.') }}
+                <p class="mt-1 font-semibold text-sm sm:text-base tabular-nums break-words {{ $saldoMinus ? 'text-red-700' : 'text-slate-900' }}">
+                    {{ $saldoMinus ? '-' : '' }}Rp{{ number_format($saldoAbs, 0, ',', '.') }}
                 </p>
+                @if ($saldoMinus)
+                    <p class="mt-0.5 text-[11px] font-medium text-red-600">Saldo minus</p>
+                @endif
             </button>
         @endforeach
     </div>

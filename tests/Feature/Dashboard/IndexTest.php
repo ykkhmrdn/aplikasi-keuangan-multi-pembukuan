@@ -57,6 +57,37 @@ class IndexTest extends TestCase
         Livewire::test(Dashboard::class)->assertSee('750.000');
     }
 
+    public function test_saldo_minus_ditandai_secara_visual(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        // pengeluaran tanpa pemasukan apapun - saldo pasti minus
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 100000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Dashboard::class)
+            ->assertSee('-Rp100.000')
+            ->assertSee('Saldo minus');
+    }
+
+    public function test_saldo_positif_tidak_ditandai_saldo_minus(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 100000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Dashboard::class)->assertDontSee('Saldo minus');
+    }
+
     public function test_user_bisa_pindah_pembukuan_terpilih(): void
     {
         $this->actingAs(User::factory()->create());
