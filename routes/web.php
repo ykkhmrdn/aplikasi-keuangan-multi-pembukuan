@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Auth\GantiPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\HutangPiutang\Index as HutangPiutangIndex;
@@ -29,3 +30,5 @@ Route::get('/transaksi/{pembukuan}', TransaksiIndex::class)->middleware('auth')-
 Route::get('/transfer', TransferIndex::class)->middleware('auth')->name('transfer.index');
 
 Route::get('/hutang-piutang/{pembukuan}', HutangPiutangIndex::class)->middleware('auth')->name('hutang-piutang.index');
+
+Route::get('/ganti-password', GantiPassword::class)->middleware('auth')->name('ganti-password');
