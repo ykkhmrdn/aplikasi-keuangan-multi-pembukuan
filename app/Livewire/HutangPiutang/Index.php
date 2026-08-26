@@ -9,11 +9,19 @@ use App\Models\Pembukuan;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination;
+
     public Pembukuan $pembukuan;
+
+    // pencarian & urutan tampilan, berlaku buat section Piutang maupun Hutang
+    public string $search = '';
+
+    public string $sort = 'tanggal_terbaru';
 
     // state form catat bon baru
     public bool $showForm = false;
@@ -37,19 +45,51 @@ class Index extends Component
 
     public string $keteranganPelunasan = '';
 
+    public function updatedSearch(): void
+    {
+        $this->resetPage('piutangPage');
+        $this->resetPage('hutangPage');
+    }
+
+    public function updatedSort(): void
+    {
+        $this->resetPage('piutangPage');
+        $this->resetPage('hutangPage');
+    }
+
     public function render()
     {
+        $piutangQuery = $this->pembukuan->hutangDiberikan()->with(['kePembukuan', 'pelunasan']);
+        $hutangQuery = $this->pembukuan->hutangDiterima()->with(['dariPembukuan', 'pelunasan']);
+
+        if ($this->search !== '') {
+            $piutangQuery->where(function ($q) {
+                $q->where('keterangan', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('kePembukuan', function ($pembukuanQuery) {
+                        $pembukuanQuery->where('nama', 'like', '%'.$this->search.'%');
+                    });
+            });
+
+            $hutangQuery->where(function ($q) {
+                $q->where('keterangan', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('dariPembukuan', function ($pembukuanQuery) {
+                        $pembukuanQuery->where('nama', 'like', '%'.$this->search.'%');
+                    });
+            });
+        }
+
+        foreach ([$piutangQuery, $hutangQuery] as $query) {
+            match ($this->sort) {
+                'tanggal_terlama' => $query->orderBy('tanggal')->orderBy('id'),
+                'jumlah_terbesar' => $query->orderByDesc('jumlah'),
+                'jumlah_terkecil' => $query->orderBy('jumlah'),
+                default => $query->orderByDesc('tanggal')->orderByDesc('id'), // tanggal_terbaru
+            };
+        }
+
         return view('livewire.hutang-piutang.index', [
-            'piutangList' => $this->pembukuan->hutangDiberikan()
-                ->with(['kePembukuan', 'pelunasan'])
-                ->orderByDesc('tanggal')
-                ->orderByDesc('id')
-                ->get(),
-            'hutangList' => $this->pembukuan->hutangDiterima()
-                ->with(['dariPembukuan', 'pelunasan'])
-                ->orderByDesc('tanggal')
-                ->orderByDesc('id')
-                ->get(),
+            'piutangList' => $piutangQuery->paginate(10, pageName: 'piutangPage'),
+            'hutangList' => $hutangQuery->paginate(10, pageName: 'hutangPage'),
             'pembukuanList' => Pembukuan::orderBy('id')->get(),
             'piutangOutstanding' => $this->pembukuan->piutangOutstanding(),
             'hutangOutstanding' => $this->pembukuan->hutangOutstanding(),
