@@ -18,15 +18,31 @@
                 @enderror
             </div>
 
-            <div>
+            <div x-data="{ tampilkan: false }">
                 <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    wire:model="password"
-                    autocomplete="current-password"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                >
+                <div class="relative">
+                    <input
+                        :type="tampilkan ? 'text' : 'password'"
+                        id="password"
+                        wire:model="password"
+                        autocomplete="current-password"
+                        class="w-full rounded-lg border border-slate-300 pl-3 pr-10 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    >
+                    <button
+                        type="button"
+                        @click="tampilkan = !tampilkan"
+                        class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:text-slate-900"
+                        :aria-label="tampilkan ? 'Sembunyikan password' : 'Tampilkan password'"
+                    >
+                        <svg x-show="!tampilkan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg x-show="tampilkan" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.6 10.6a3 3 0 004.24 4.24M9.4 5.3A9.8 9.8 0 0112 5c6 0 9.5 7 9.5 7a15.6 15.6 0 01-2.9 3.9M6.2 6.2C4 7.7 2.5 10 2.5 10s3.5 7 9.5 7a9.6 9.6 0 004-1" />
+                        </svg>
+                    </button>
+                </div>
                 @error('password')
                     <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                 @enderror

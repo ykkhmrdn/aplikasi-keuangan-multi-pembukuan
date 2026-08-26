@@ -6,18 +6,18 @@
 --}}
 <div wire:key="{{ $keyPrefix }}-{{ $hp->id }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     <div class="flex items-start justify-between gap-3">
-        <div>
-            <p class="text-sm sm:text-base font-medium text-slate-900">{{ $arahLabel }} {{ $lawan->nama }}</p>
-            <p class="text-xs text-slate-500 mt-1">
+        <div class="min-w-0">
+            <p class="text-sm sm:text-base font-medium text-slate-900 truncate">{{ $arahLabel }} {{ $lawan->nama }}</p>
+            <p class="text-xs text-slate-500 mt-1 truncate">
                 {{ $hp->tanggal->translatedFormat('d M Y') }}
                 @if ($hp->keterangan)
                     &middot; {{ $hp->keterangan }}
                 @endif
             </p>
         </div>
-        <div class="text-right shrink-0">
-            <p class="font-semibold text-slate-900 tabular-nums">Rp{{ number_format($hp->jumlah, 0, ',', '.') }}</p>
-            <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium
+        <div class="text-right shrink-0 max-w-[45%]">
+            <p class="font-semibold text-slate-900 tabular-nums break-words">Rp{{ number_format($hp->jumlah, 0, ',', '.') }}</p>
+            <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium break-words
                 {{ $hp->status === \App\Enums\StatusHutangPiutang::Lunas ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
                 {{ $hp->status === \App\Enums\StatusHutangPiutang::Lunas ? 'Lunas' : 'Sisa Rp'.number_format($hp->sisaOutstanding(), 0, ',', '.') }}
             </span>

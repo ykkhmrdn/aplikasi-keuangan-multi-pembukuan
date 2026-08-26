@@ -33,13 +33,13 @@
 
     {{-- Ringkasan outstanding --}}
     <div class="grid grid-cols-2 gap-3">
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Piutang (belum diterima)</p>
-            <p class="mt-1 text-lg font-semibold text-emerald-700 tabular-nums">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
+            <p class="mt-1 text-lg font-semibold text-emerald-700 tabular-nums break-words">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
-            <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
+            <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
         </div>
     </div>
 

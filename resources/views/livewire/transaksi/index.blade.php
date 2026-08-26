@@ -131,9 +131,9 @@
         @forelse ($transaksiList as $transaksi)
             <div wire:key="transaksi-{{ $transaksi->id }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <p class="text-sm sm:text-base font-medium text-slate-900">{{ $transaksi->kategori->nama }}</p>
-                        <p class="text-xs text-slate-500 mt-0.5">
+                    <div class="min-w-0">
+                        <p class="text-sm sm:text-base font-medium text-slate-900 truncate">{{ $transaksi->kategori->nama }}</p>
+                        <p class="text-xs text-slate-500 mt-0.5 truncate">
                             {{ $transaksi->tanggal->translatedFormat('d M Y') }}
                             @if ($transaksi->keterangan)
                                 &middot; {{ $transaksi->keterangan }}
@@ -141,8 +141,8 @@
                         </p>
                     </div>
 
-                    <div class="text-right shrink-0">
-                        <p class="font-semibold tabular-nums {{ $transaksi->tipe === \App\Enums\TipeTransaksi::Pemasukan ? 'text-emerald-700' : 'text-red-700' }}">
+                    <div class="text-right shrink-0 max-w-[45%]">
+                        <p class="font-semibold tabular-nums break-words {{ $transaksi->tipe === \App\Enums\TipeTransaksi::Pemasukan ? 'text-emerald-700' : 'text-red-700' }}">
                             {{ $transaksi->tipe === \App\Enums\TipeTransaksi::Pemasukan ? '+' : '-' }}Rp{{ number_format($transaksi->jumlah, 0, ',', '.') }}
                         </p>
                         <div class="mt-1 flex justify-end items-center gap-3 text-sm">

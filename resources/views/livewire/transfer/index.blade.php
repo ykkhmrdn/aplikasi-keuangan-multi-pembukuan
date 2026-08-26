@@ -105,7 +105,7 @@
         @forelse ($transferList as $transfer)
             <div wire:key="transfer-{{ $transfer->id }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
-                    <div>
+                    <div class="min-w-0">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium {{ $badgePembukuan[$transfer->dariPembukuan->tipe->value] }}">
                                 {{ $transfer->dariPembukuan->nama }}
@@ -115,7 +115,7 @@
                                 {{ $transfer->kePembukuan->nama }}
                             </span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1.5">
+                        <p class="text-xs text-slate-500 mt-1.5 truncate">
                             {{ $transfer->tanggal->translatedFormat('d M Y') }}
                             @if ($transfer->keterangan)
                                 &middot; {{ $transfer->keterangan }}
@@ -123,7 +123,7 @@
                         </p>
                     </div>
 
-                    <p class="font-semibold text-slate-900 shrink-0 tabular-nums">
+                    <p class="font-semibold text-slate-900 shrink-0 tabular-nums break-words max-w-[40%] text-right">
                         Rp{{ number_format($transfer->jumlah, 0, ',', '.') }}
                     </p>
                 </div>
