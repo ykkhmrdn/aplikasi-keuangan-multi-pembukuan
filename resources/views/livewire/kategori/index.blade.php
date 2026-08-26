@@ -26,7 +26,8 @@
                     type="text"
                     wire:model="nama"
                     autofocus
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('nama') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                 @error('nama') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -36,7 +37,8 @@
                 <select
                     wire:model="tipe"
                     @if ($editingLocked) disabled @endif
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:bg-slate-100 disabled:text-slate-500"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:text-slate-500
+                        {{ $errors->has('tipe') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                     @foreach ($tipeOptions as $option)
                         <option value="{{ $option->value }}">{{ $option->label() }}</option>
@@ -52,7 +54,8 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Pembukuan</label>
                 <select
                     wire:model="pembukuanId"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('pembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
                 >
                     <option value="global">Global (semua pembukuan)</option>
                     @foreach ($pembukuanList as $pembukuan)
@@ -148,19 +151,29 @@
                         </div>
                     </div>
 
-                    <div class="flex shrink-0 items-center gap-3 text-sm">
-                        <button wire:click="edit({{ $kategori->id }})" class="text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:underline">Edit</button>
-
-                        @if ($confirmingDeleteId === $kategori->id)
-                            <span class="inline-flex items-center gap-2 rounded-lg bg-red-50 px-2 py-1">
-                                <span class="text-xs text-red-700">Yakin?</span>
-                                <button wire:click="hapus({{ $kategori->id }})" class="text-xs font-semibold text-red-700 hover:text-red-900 focus-visible:outline-none focus-visible:underline">Ya</button>
-                                <button wire:click="batalHapus" class="text-xs text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:underline">Batal</button>
-                            </span>
-                        @else
-                            <button wire:click="confirmHapus({{ $kategori->id }})" class="text-red-600 hover:text-red-800 focus-visible:outline-none focus-visible:underline">Hapus</button>
-                        @endif
+                    <div class="flex shrink-0 items-center gap-2 text-sm">
+                        <button
+                            wire:click="edit({{ $kategori->id }})"
+                            class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            wire:click="confirmHapus({{ $kategori->id }})"
+                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                        >
+                            Hapus
+                        </button>
                     </div>
+
+                    @if ($confirmingDeleteId === $kategori->id)
+                        @include('livewire._modal-konfirmasi-hapus', [
+                            'judul' => 'Hapus Kategori',
+                            'pesan' => 'Hapus kategori "'.$kategori->nama.'"? Tindakan ini tidak bisa dibatalkan.',
+                            'konfirmAction' => 'hapus('.$kategori->id.')',
+                            'batalAction' => 'batalHapus',
+                        ])
+                    @endif
                 </div>
             </div>
         @empty
