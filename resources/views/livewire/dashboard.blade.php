@@ -1,16 +1,29 @@
-<div class="space-y-4">
-    <h1 class="text-xl font-semibold text-slate-900">Dashboard</h1>
+<div class="space-y-6">
+    <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
 
-    {{-- Kartu saldo tiap pembukuan --}}
+    {{-- Kartu saldo tiap pembukuan, sekaligus switcher. Tiap pembukuan punya warna identitas
+         sendiri (indigo/teal/violet) supaya sekali lihat langsung kebedain (docs/DECISION_LOG.md). --}}
     <div class="grid grid-cols-3 gap-3">
         @foreach ($pembukuanList as $p)
+            @php
+                $aktif = $pembukuanTerpilih->id === $p->id;
+                $accent = match ($p->tipe) {
+                    \App\Enums\TipePembukuan::Pribadi => ['dot' => 'bg-indigo-500', 'bar' => 'bg-indigo-500', 'ring' => 'ring-indigo-500/30', 'border' => 'border-indigo-300'],
+                    \App\Enums\TipePembukuan::Usaha => ['dot' => 'bg-teal-500', 'bar' => 'bg-teal-500', 'ring' => 'ring-teal-500/30', 'border' => 'border-teal-300'],
+                    \App\Enums\TipePembukuan::Kantor => ['dot' => 'bg-violet-500', 'bar' => 'bg-violet-500', 'ring' => 'ring-violet-500/30', 'border' => 'border-violet-300'],
+                };
+            @endphp
             <button
                 wire:click="pilihPembukuan({{ $p->id }})"
-                class="rounded-lg border p-3 text-left
-                    {{ $pembukuanTerpilih->id === $p->id ? 'border-slate-900 bg-white' : 'border-slate-200 bg-white hover:border-slate-300' }}"
+                class="relative rounded-xl border bg-white py-3 pl-4 pr-2 text-left shadow-sm transition-colors
+                    {{ $aktif ? $accent['border'].' ring-2 '.$accent['ring'] : 'border-slate-200 hover:border-slate-300' }}"
             >
-                <p class="text-xs text-slate-500">{{ $p->nama }}</p>
-                <p class="mt-1 font-semibold text-slate-900 text-sm sm:text-base">
+                <span class="absolute inset-y-0 left-0 w-1 rounded-l-xl {{ $accent['bar'] }}"></span>
+                <p class="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full {{ $accent['dot'] }}"></span>
+                    {{ $p->nama }}
+                </p>
+                <p class="mt-1 font-semibold text-slate-900 text-sm sm:text-base tabular-nums">
                     Rp{{ number_format($p->saldo(), 0, ',', '.') }}
                 </p>
             </button>
@@ -19,29 +32,29 @@
 
     {{-- Ringkasan hutang-piutang outstanding pembukuan terpilih --}}
     <div class="grid grid-cols-2 gap-3">
-        <div class="rounded-lg border border-slate-200 bg-white p-3">
-            <p class="text-xs text-slate-500">Piutang (belum diterima)</p>
-            <p class="text-lg font-semibold text-emerald-700">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Piutang (belum diterima)</p>
+            <p class="mt-1 text-lg font-semibold text-emerald-700 tabular-nums">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
         </div>
-        <div class="rounded-lg border border-slate-200 bg-white p-3">
-            <p class="text-xs text-slate-500">Hutang (belum dibayar)</p>
-            <p class="text-lg font-semibold text-red-700">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
+        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
+            <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
         </div>
     </div>
 
     {{-- Riwayat gabungan pembukuan terpilih --}}
     <div>
-        <h2 class="text-sm font-semibold text-slate-700 mb-2">
+        <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
             Riwayat {{ $pembukuanTerpilih->nama }}
         </h2>
         <div class="space-y-2">
             @forelse ($riwayat as $item)
-                <div class="rounded-lg border border-slate-200 bg-white p-3 flex items-center justify-between gap-3">
+                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between gap-3">
                     <div>
-                        <p class="font-medium text-slate-900">{{ $item['deskripsi'] }}</p>
+                        <p class="text-sm sm:text-base font-medium text-slate-900">{{ $item['deskripsi'] }}</p>
                         <p class="text-xs text-slate-500 mt-0.5">{{ $item['tanggal']->translatedFormat('d M Y') }}</p>
                     </div>
-                    <p class="font-semibold shrink-0 {{ $item['arah'] === 'masuk' ? 'text-emerald-700' : 'text-red-700' }}">
+                    <p class="font-semibold shrink-0 tabular-nums {{ $item['arah'] === 'masuk' ? 'text-emerald-700' : 'text-red-700' }}">
                         {{ $item['arah'] === 'masuk' ? '+' : '-' }}Rp{{ number_format($item['jumlah'], 0, ',', '.') }}
                     </p>
                 </div>
