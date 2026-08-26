@@ -169,4 +169,55 @@ class IndexTest extends TestCase
 
         $this->assertDatabaseHas('kategori', ['id' => $kategori->id]);
     }
+
+    public function test_pencarian_menyaring_kategori_berdasarkan_nama(): void
+    {
+        $this->actingAs(User::factory()->create());
+        Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+        Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Livewire::test(Index::class)
+            ->set('search', 'gaj')
+            ->assertSee('Gaji')
+            ->assertDontSee('Belanja');
+    }
+
+    public function test_pencarian_reset_ke_halaman_pertama(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(Index::class)
+            ->call('setPage', 2)
+            ->set('search', 'apa saja')
+            ->assertSet('paginators.page', 1);
+    }
+
+    public function test_urutan_nama_z_a_menampilkan_kategori_z_lebih_dulu(): void
+    {
+        $this->actingAs(User::factory()->create());
+        Kategori::create(['nama' => 'Ayam', 'tipe' => TipeTransaksi::Pengeluaran]);
+        Kategori::create(['nama' => 'Zebra', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        $html = Livewire::test(Index::class)
+            ->set('sort', 'nama_desc')
+            ->html();
+
+        $this->assertTrue(strpos($html, 'Zebra') < strpos($html, 'Ayam'));
+    }
+
+    public function test_daftar_kategori_dipaginasi_10_per_halaman(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        // nama dipadding 2 digit biar urutan alfabet = urutan angka, hindari "Kategori 10" < "Kategori 2"
+        foreach (range(1, 15) as $i) {
+            Kategori::create(['nama' => 'Kategori '.str_pad($i, 2, '0', STR_PAD_LEFT), 'tipe' => TipeTransaksi::Pengeluaran]);
+        }
+
+        Livewire::test(Index::class)
+            ->assertSee('Kategori 01')
+            ->assertDontSee('Kategori 15')
+            ->call('nextPage')
+            ->assertSee('Kategori 15');
+    }
 }

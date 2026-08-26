@@ -8,14 +8,21 @@ use App\Models\Pembukuan;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    // filter tampilan
+    use WithPagination;
+
+    // filter, pencarian, & urutan tampilan
     public string $filterTipe = 'semua';
 
     public string $filterPembukuan = 'semua';
+
+    public string $search = '';
+
+    public string $sort = 'nama_asc';
 
     // state form tambah/edit
     public bool $showForm = false;
@@ -35,6 +42,26 @@ class Index extends Component
 
     public ?string $deleteErrorMessage = null;
 
+    public function updatedFilterTipe(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterPembukuan(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSort(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
         $query = Kategori::query()->with('pembukuan')->withCount('transaksi');
@@ -49,8 +76,19 @@ class Index extends Component
             $query->where('pembukuan_id', $this->filterPembukuan);
         }
 
+        if ($this->search !== '') {
+            $query->where('nama', 'like', '%'.$this->search.'%');
+        }
+
+        match ($this->sort) {
+            'nama_desc' => $query->orderByDesc('nama'),
+            'terbaru' => $query->orderByDesc('created_at'),
+            'terlama' => $query->orderBy('created_at'),
+            default => $query->orderBy('tipe')->orderBy('nama'), // nama_asc, default: dikelompokkan per tipe biar scannable
+        };
+
         return view('livewire.kategori.index', [
-            'kategoriList' => $query->orderBy('tipe')->orderBy('nama')->get(),
+            'kategoriList' => $query->paginate(10),
             'pembukuanList' => Pembukuan::orderBy('id')->get(),
             'tipeOptions' => TipeTransaksi::cases(),
         ]);
