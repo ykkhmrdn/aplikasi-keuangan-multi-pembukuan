@@ -110,4 +110,82 @@ class IndexTest extends TestCase
         $this->assertEquals('-500000.00', $pribadi->fresh()->saldo());
         $this->assertEquals('500000.00', $kantor->fresh()->saldo());
     }
+
+    public function test_pencarian_menyaring_transfer_berdasarkan_keterangan_atau_nama_pembukuan(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $usaha = Pembukuan::create(['nama' => 'Usaha', 'tipe' => 'usaha']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+
+        \App\Models\TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 100000, 'tanggal' => now(), 'keterangan' => 'modal awal',
+        ]);
+        \App\Models\TransferSaldo::create([
+            'dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 200000, 'tanggal' => now(), 'keterangan' => 'operasional',
+        ]);
+
+        Livewire::test(Index::class)
+            ->set('search', 'modal')
+            ->assertSee('100.000')
+            ->assertDontSee('200.000');
+    }
+
+    public function test_pencarian_reset_ke_halaman_pertama(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(Index::class)
+            ->call('setPage', 2)
+            ->set('search', 'apa saja')
+            ->assertSet('paginators.page', 1);
+    }
+
+    public function test_urutan_jumlah_terbesar_menampilkan_transfer_besar_lebih_dulu(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+
+        \App\Models\TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 100000, 'tanggal' => now(),
+        ]);
+        \App\Models\TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 900000, 'tanggal' => now(),
+        ]);
+
+        $html = Livewire::test(Index::class)
+            ->set('sort', 'jumlah_terbesar')
+            ->html();
+
+        $this->assertTrue(strpos($html, '900.000') < strpos($html, '100.000'));
+    }
+
+    public function test_daftar_transfer_dipaginasi_10_per_halaman(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+
+        // keterangan dipadding 2 digit biar assertSee/assertDontSee gak ketuker substring
+        // tanggal beda tiap transfer biar urutan default (tanggal terbaru) konsisten dan bisa diprediksi
+        foreach (range(1, 15) as $i) {
+            \App\Models\TransferSaldo::create([
+                'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+                'jumlah' => 10000,
+                'tanggal' => now()->subDays(15 - $i),
+                'keterangan' => 'Transfer ke-'.str_pad($i, 2, '0', STR_PAD_LEFT),
+            ]);
+        }
+
+        Livewire::test(Index::class)
+            ->assertSee('Transfer ke-15') // terbaru, harus di halaman 1
+            ->assertDontSee('Transfer ke-01') // terlama, harus di halaman 2
+            ->call('nextPage')
+            ->assertSee('Transfer ke-01');
+    }
 }

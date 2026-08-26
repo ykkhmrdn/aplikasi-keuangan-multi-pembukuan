@@ -7,10 +7,13 @@ use App\Models\TransferSaldo;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination;
+
     // state form
     public bool $showForm = false;
 
@@ -24,14 +27,46 @@ class Index extends Component
 
     public string $keterangan = '';
 
+    // pencarian & urutan tampilan
+    public string $search = '';
+
+    public string $sort = 'tanggal_terbaru';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSort(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
+        $query = TransferSaldo::query()->with(['dariPembukuan', 'kePembukuan']);
+
+        if ($this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('keterangan', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('dariPembukuan', function ($pembukuanQuery) {
+                        $pembukuanQuery->where('nama', 'like', '%'.$this->search.'%');
+                    })
+                    ->orWhereHas('kePembukuan', function ($pembukuanQuery) {
+                        $pembukuanQuery->where('nama', 'like', '%'.$this->search.'%');
+                    });
+            });
+        }
+
+        match ($this->sort) {
+            'tanggal_terlama' => $query->orderBy('tanggal')->orderBy('id'),
+            'jumlah_terbesar' => $query->orderByDesc('jumlah'),
+            'jumlah_terkecil' => $query->orderBy('jumlah'),
+            default => $query->orderByDesc('tanggal')->orderByDesc('id'), // tanggal_terbaru
+        };
+
         return view('livewire.transfer.index', [
-            'transferList' => TransferSaldo::query()
-                ->with(['dariPembukuan', 'kePembukuan'])
-                ->orderByDesc('tanggal')
-                ->orderByDesc('id')
-                ->get(),
+            'transferList' => $query->paginate(10),
             'pembukuanList' => Pembukuan::orderBy('id')->get(),
         ]);
     }

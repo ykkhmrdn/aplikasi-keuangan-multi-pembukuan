@@ -92,6 +92,29 @@
         </form>
     @endif
 
+    {{-- Pencarian & urutan --}}
+    <div class="relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400">
+            <circle cx="11" cy="11" r="7" />
+            <path stroke-linecap="round" d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+            type="text"
+            wire:model.live.debounce.400ms="search"
+            placeholder="Cari keterangan atau nama pembukuan..."
+            class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+        >
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+        <select wire:model.live="sort" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+            <option value="tanggal_terbaru">Tanggal terbaru</option>
+            <option value="tanggal_terlama">Tanggal terlama</option>
+            <option value="jumlah_terbesar">Jumlah terbesar</option>
+            <option value="jumlah_terkecil">Jumlah terkecil</option>
+        </select>
+    </div>
+
     {{-- Riwayat transfer. Nama pembukuan dikasih badge warna identitas
          (sama kayak Dashboard/Kategori) supaya arah transfer kebaca sekilas. --}}
     @php
@@ -129,7 +152,15 @@
                 </div>
             </div>
         @empty
-            <p class="text-sm text-slate-500 text-center py-6">Belum ada riwayat transfer.</p>
+            <p class="text-sm text-slate-500 text-center py-6">
+                {{ $search !== '' ? 'Gak ada riwayat transfer yang cocok dengan pencarian.' : 'Belum ada riwayat transfer.' }}
+            </p>
         @endforelse
     </div>
+
+    @if ($transferList->hasPages())
+        <div class="pt-2">
+            {{ $transferList->links() }}
+        </div>
+    @endif
 </div>
