@@ -11,7 +11,9 @@
         @livewireStyles
     </head>
     <body class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        {{ $slot }}
+        <div class="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            {{ $slot }}
+        </div>
 
         @livewireScripts
     </body>
