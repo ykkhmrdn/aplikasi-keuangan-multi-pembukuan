@@ -64,7 +64,7 @@ class Index extends Component
 
     public function render()
     {
-        $query = Kategori::query()->with('pembukuan')->withCount('transaksi');
+        $query = Kategori::query()->with('pembukuan');
 
         if ($this->filterTipe !== 'semua') {
             $query->where('tipe', $this->filterTipe);

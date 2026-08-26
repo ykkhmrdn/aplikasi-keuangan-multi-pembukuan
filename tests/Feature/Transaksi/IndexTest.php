@@ -8,6 +8,7 @@ use App\Models\Kategori;
 use App\Models\Pembukuan;
 use App\Models\Transaksi;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -160,7 +161,7 @@ class IndexTest extends TestCase
             'tanggal' => now(),
         ]);
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         Livewire::test(Index::class, ['pembukuan' => $pembukuan])
             ->call('edit', $transaksiMilikLain->id);

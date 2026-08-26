@@ -4,6 +4,7 @@ namespace Tests\Feature\Transfer;
 
 use App\Livewire\Transfer\Index;
 use App\Models\Pembukuan;
+use App\Models\TransferSaldo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -24,7 +25,7 @@ class IndexTest extends TestCase
         $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
         $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
 
-        \App\Models\TransferSaldo::create([
+        TransferSaldo::create([
             'dari_pembukuan_id' => $pribadi->id,
             'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 300000,
@@ -118,11 +119,11 @@ class IndexTest extends TestCase
         $usaha = Pembukuan::create(['nama' => 'Usaha', 'tipe' => 'usaha']);
         $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
 
-        \App\Models\TransferSaldo::create([
+        TransferSaldo::create([
             'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 100000, 'tanggal' => now(), 'keterangan' => 'modal awal',
         ]);
-        \App\Models\TransferSaldo::create([
+        TransferSaldo::create([
             'dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 200000, 'tanggal' => now(), 'keterangan' => 'operasional',
         ]);
@@ -149,11 +150,11 @@ class IndexTest extends TestCase
         $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
         $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
 
-        \App\Models\TransferSaldo::create([
+        TransferSaldo::create([
             'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 100000, 'tanggal' => now(),
         ]);
-        \App\Models\TransferSaldo::create([
+        TransferSaldo::create([
             'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 900000, 'tanggal' => now(),
         ]);
@@ -174,7 +175,7 @@ class IndexTest extends TestCase
         // keterangan dipadding 2 digit biar assertSee/assertDontSee gak ketuker substring
         // tanggal beda tiap transfer biar urutan default (tanggal terbaru) konsisten dan bisa diprediksi
         foreach (range(1, 15) as $i) {
-            \App\Models\TransferSaldo::create([
+            TransferSaldo::create([
                 'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
                 'jumlah' => 10000,
                 'tanggal' => now()->subDays(15 - $i),

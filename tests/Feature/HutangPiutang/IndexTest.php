@@ -7,6 +7,7 @@ use App\Livewire\HutangPiutang\Index;
 use App\Models\HutangPiutang;
 use App\Models\Pembukuan;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -210,6 +211,24 @@ class IndexTest extends TestCase
         // pribadi terima pelunasan: kas masuk 500rb (balik ke 0)
         $this->assertEquals('0.00', $pribadi->fresh()->saldo());
         $this->assertEquals('0.00', $kantor->fresh()->saldo());
+    }
+
+    public function test_bon_pembukuan_lain_tidak_bisa_dilunasi_lewat_pembukuan_ini(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $usaha = Pembukuan::create(['nama' => 'Usaha', 'tipe' => 'usaha']);
+
+        // bon ini sama sekali gak melibatkan Pribadi (Usaha <-> Kantor)
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('melunasi', $hp->id);
     }
 
     public function test_pencarian_menyaring_piutang_dan_hutang_berdasarkan_keterangan_atau_nama_pembukuan(): void

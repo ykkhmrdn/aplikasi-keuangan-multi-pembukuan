@@ -48,9 +48,25 @@ class HutangPiutang extends Model
         return $this->hasMany(PelunasanHutang::class);
     }
 
-    /** Sisa yang belum dilunasi, dihitung dari jumlah awal dikurangi total pelunasan. */
+    /**
+     * Sisa yang belum dilunasi, dihitung dari jumlah awal dikurangi total pelunasan.
+     *
+     * Kalau relasi pelunasan sudah di-eager-load (mis. lewat with() di halaman list),
+     * jumlahkan dari collection yang sudah ada (pakai bcadd biar presisi desimal tetap
+     * terjaga, bukan Collection::sum() yang bisa kena floating point) supaya tidak query
+     * ulang per baris (N+1). Kalau belum di-load, query sum() langsung ke DB seperti biasa.
+     */
     public function sisaOutstanding(): string
     {
-        return bcsub((string) $this->jumlah, (string) $this->pelunasan()->sum('jumlah'), 2);
+        if ($this->relationLoaded('pelunasan')) {
+            $totalPelunasan = $this->pelunasan->reduce(
+                fn (string $carry, PelunasanHutang $item) => bcadd($carry, (string) $item->jumlah, 2),
+                '0.00'
+            );
+        } else {
+            $totalPelunasan = (string) $this->pelunasan()->sum('jumlah');
+        }
+
+        return bcsub((string) $this->jumlah, $totalPelunasan, 2);
     }
 }

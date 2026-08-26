@@ -147,7 +147,10 @@ class Index extends Component
 
     public function melunasi(int $id): void
     {
-        $hutangPiutang = HutangPiutang::findOrFail($id);
+        // scoped ke pembukuan yang sedang dibuka (dari sisi manapun, berpiutang/berutang),
+        // konsisten sama pola anti akses-silang di Transaksi - cegah pelunasan bon pembukuan
+        // lain lewat manipulasi request walau di UI tombolnya memang tidak pernah muncul
+        $hutangPiutang = $this->hutangPiutangScoped()->findOrFail($id);
 
         $this->melunasiId = $id;
         $this->jumlahPelunasan = $hutangPiutang->sisaOutstanding();
@@ -166,7 +169,7 @@ class Index extends Component
             'jumlahPelunasan' => [
                 'required', 'numeric', 'min:0.01',
                 function ($attribute, $value, $fail) {
-                    $hutangPiutang = HutangPiutang::find($this->melunasiId);
+                    $hutangPiutang = $this->hutangPiutangScoped()->find($this->melunasiId);
                     $sisa = $hutangPiutang?->sisaOutstanding() ?? '0.00';
 
                     if (bccomp((string) $value, $sisa, 2) > 0) {
@@ -185,7 +188,7 @@ class Index extends Component
         try {
             DB::transaction(function () {
                 // row lock supaya tidak race kalau ada dua pelunasan diproses bersamaan
-                $hutangPiutang = HutangPiutang::whereKey($this->melunasiId)->lockForUpdate()->firstOrFail();
+                $hutangPiutang = $this->hutangPiutangScoped()->whereKey($this->melunasiId)->lockForUpdate()->firstOrFail();
                 $sisaSaatIni = $hutangPiutang->sisaOutstanding();
 
                 if (bccomp($this->jumlahPelunasan, $sisaSaatIni, 2) > 0) {
@@ -221,5 +224,14 @@ class Index extends Component
     {
         $this->reset(['dariPembukuanId', 'kePembukuanId', 'jumlah', 'keterangan']);
         $this->tanggal = now()->format('Y-m-d');
+    }
+
+    /** Bon yang melibatkan pembukuan yang sedang dibuka (dari sisi manapun). */
+    private function hutangPiutangScoped()
+    {
+        return HutangPiutang::where(function ($query) {
+            $query->where('dari_pembukuan_id', $this->pembukuan->id)
+                ->orWhere('ke_pembukuan_id', $this->pembukuan->id);
+        });
     }
 }
