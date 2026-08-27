@@ -31,12 +31,19 @@ jobs:
           npm ci
           npm run build
 
+      - name: Diagnostik koneksi ke server (sementara, buat cari tau kenapa gagal)
+        run: |
+          echo "Runner outbound IP:"
+          curl -s https://checkip.amazonaws.com || true
+          echo "Test koneksi TCP ke server (timeout 20 detik)..."
+          timeout 20 bash -c "cat < /dev/tcp/${{ secrets.DEPLOY_HOST }}/${{ secrets.DEPLOY_PORT }}" && echo "TCP_OK" || echo "TCP_GAGAL"
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -T 20 -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
       # .env dan storage/ sengaja DIKECUALIKAN dari rsync - .env isinya kredensial
       # production yang cuma diatur manual lewat SSH, storage/ isinya log/cache/file
