@@ -15,6 +15,9 @@ REMOTE_HOST="keuanganreza-hostinger"
 REMOTE_PATH="/home/u632902628/domains/keuanganreza.my.id/keuangan-app"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="$(mktemp -d)"
+# mktemp -d bikin folder permission 700 (cuma owner) - kalau gak dibenerin, rsync -a
+# nyalin permission itu ke folder app di server, nutup akses web server ke public_html.
+chmod 755 "$BUILD_DIR"
 
 cleanup() {
   rm -rf "$BUILD_DIR"
@@ -58,6 +61,7 @@ echo "==> Migrate + cache di server"
 ssh "$REMOTE_HOST" "
   set -e
   cd '$REMOTE_PATH'
+  chmod 755 .
   ln -sfn ../storage/app/public public/storage
   php artisan migrate --force
   php artisan config:cache
