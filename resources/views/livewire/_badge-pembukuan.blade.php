@@ -1,5 +1,5 @@
 {{--
-    Badge kecil nama pembukuan, warna sesuai identitas (indigo/teal/violet). Kalau
+    Badge kecil nama pembukuan, warna sesuai identitas (blue/teal/violet). Kalau
     $pembukuan null, dianggap "Global" (dipakai Kategori buat kategori lintas pembukuan).
 
     Variabel yang diharapkan dari pemanggil:
