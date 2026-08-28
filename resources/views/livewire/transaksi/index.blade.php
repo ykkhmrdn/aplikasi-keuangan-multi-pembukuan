@@ -15,7 +15,7 @@
                 <select
                     wire:model.live="tipe"
                     class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('tipe') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
+                        {{ $errors->has('tipe') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 >
                     @foreach ($tipeOptions as $option)
                         <option value="{{ $option->value }}">{{ $option->label() }}</option>
@@ -29,7 +29,7 @@
                 <select
                     wire:model="kategoriId"
                     class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('kategoriId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
+                        {{ $errors->has('kategoriId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 >
                     <option value="">Pilih kategori</option>
                     @foreach ($kategoriSemua->where('tipe', \App\Enums\TipeTransaksi::from($tipe)) as $kategori)
@@ -53,7 +53,7 @@
                     type="date"
                     wire:model="tanggal"
                     class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('tanggal') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
+                        {{ $errors->has('tanggal') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 >
                 @error('tanggal') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -64,7 +64,7 @@
                     wire:model="keterangan"
                     rows="2"
                     class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('keterangan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
+                        {{ $errors->has('keterangan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 ></textarea>
                 @error('keterangan') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -74,14 +74,14 @@
                     type="submit"
                     wire:loading.attr="disabled"
                     wire:target="simpan"
-                    class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all duration-200 hover:shadow-lg hover:shadow-indigo-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/40 disabled:opacity-50 motion-safe:active:scale-[0.97]"
+                    class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 disabled:opacity-50 motion-safe:active:scale-[0.97]"
                 >
                     Simpan
                 </button>
                 <button
                     type="button"
                     wire:click="batal"
-                    class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 motion-safe:active:scale-[0.97]"
+                    class="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 motion-safe:active:scale-[0.97]"
                 >
                     Batal
                 </button>
@@ -93,17 +93,17 @@
 
     {{-- Filter & urutan --}}
     <div class="flex flex-wrap gap-2">
-        <select wire:model.live="filterKategori" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10">
+        <select wire:model.live="filterKategori" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10">
             <option value="semua">Semua kategori</option>
             @foreach ($kategoriSemua as $kategori)
                 <option value="{{ $kategori->id }}">{{ $kategori->tipe->label() }} - {{ $kategori->nama }}</option>
             @endforeach
         </select>
 
-        <input type="date" wire:model.live="filterDari" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10" placeholder="Dari tanggal">
-        <input type="date" wire:model.live="filterSampai" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10" placeholder="Sampai tanggal">
+        <input type="date" wire:model.live="filterDari" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10" placeholder="Dari tanggal">
+        <input type="date" wire:model.live="filterSampai" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10" placeholder="Sampai tanggal">
 
-        <select wire:model.live="sort" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10">
+        <select wire:model.live="sort" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10">
             <option value="tanggal_terbaru">Tanggal terbaru</option>
             <option value="tanggal_terlama">Tanggal terlama</option>
             <option value="jumlah_terbesar">Jumlah terbesar</option>
@@ -133,7 +133,7 @@
                         <div class="mt-1.5 flex justify-end items-center gap-2 text-sm">
                             <button
                                 wire:click="edit({{ $transaksi->id }})"
-                                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 motion-safe:active:scale-[0.97]"
+                                class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 motion-safe:active:scale-[0.97]"
                             >
                                 Edit
                             </button>
