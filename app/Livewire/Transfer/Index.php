@@ -17,6 +17,8 @@ class Index extends Component
     // state form
     public bool $showForm = false;
 
+    public ?int $editingId = null;
+
     public string $dariPembukuanId = '';
 
     public string $kePembukuanId = '';
@@ -26,6 +28,9 @@ class Index extends Component
     public string $tanggal = '';
 
     public string $keterangan = '';
+
+    // state hapus
+    public ?int $confirmingDeleteId = null;
 
     // pencarian & urutan tampilan
     public string $search = '';
@@ -77,6 +82,19 @@ class Index extends Component
         $this->showForm = true;
     }
 
+    public function edit(int $id): void
+    {
+        $transfer = TransferSaldo::findOrFail($id);
+
+        $this->editingId = $transfer->id;
+        $this->dariPembukuanId = (string) $transfer->dari_pembukuan_id;
+        $this->kePembukuanId = (string) $transfer->ke_pembukuan_id;
+        $this->jumlah = (string) $transfer->jumlah;
+        $this->tanggal = $transfer->tanggal->format('Y-m-d');
+        $this->keterangan = (string) $transfer->keterangan;
+        $this->showForm = true;
+    }
+
     public function batal(): void
     {
         $this->resetForm();
@@ -109,25 +127,52 @@ class Index extends Component
             'keterangan' => 'keterangan',
         ]);
 
-        // satu insert saja, tapi tetap dibungkus transaction sesuai aturan kerja
+        $data = [
+            'dari_pembukuan_id' => $this->dariPembukuanId,
+            'ke_pembukuan_id' => $this->kePembukuanId,
+            'jumlah' => $this->jumlah,
+            'tanggal' => $this->tanggal,
+            'keterangan' => $this->keterangan !== '' ? $this->keterangan : null,
+        ];
+
+        // satu write saja, tapi tetap dibungkus transaction sesuai aturan kerja
         // (konsisten dengan pelunasan hutang, jaga-jaga kalau nanti ada penulisan terkait lain)
-        DB::transaction(function () {
-            TransferSaldo::create([
-                'dari_pembukuan_id' => $this->dariPembukuanId,
-                'ke_pembukuan_id' => $this->kePembukuanId,
-                'jumlah' => $this->jumlah,
-                'tanggal' => $this->tanggal,
-                'keterangan' => $this->keterangan !== '' ? $this->keterangan : null,
-            ]);
+        DB::transaction(function () use ($data) {
+            if ($this->editingId) {
+                TransferSaldo::findOrFail($this->editingId)->update($data);
+            } else {
+                TransferSaldo::create($data);
+            }
         });
 
         $this->resetForm();
         $this->showForm = false;
     }
 
+    public function confirmHapus(int $id): void
+    {
+        $this->confirmingDeleteId = $id;
+    }
+
+    public function batalHapus(): void
+    {
+        $this->confirmingDeleteId = null;
+    }
+
+    /**
+     * Hapus selalu boleh - saldo kedua pembukuan otomatis "kembali normal" tanpa
+     * logic tambahan, karena Pembukuan::saldo() dihitung dinamis tiap render
+     * (bukan kolom cache), jadi transfer yang kehapus otomatis gak lagi kehitung.
+     */
+    public function hapus(int $id): void
+    {
+        TransferSaldo::findOrFail($id)->delete();
+        $this->confirmingDeleteId = null;
+    }
+
     private function resetForm(): void
     {
-        $this->reset(['dariPembukuanId', 'kePembukuanId', 'jumlah', 'keterangan']);
+        $this->reset(['editingId', 'dariPembukuanId', 'kePembukuanId', 'jumlah', 'keterangan']);
         $this->tanggal = now()->format('Y-m-d');
     }
 }

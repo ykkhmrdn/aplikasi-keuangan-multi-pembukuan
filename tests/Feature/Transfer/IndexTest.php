@@ -144,6 +144,80 @@ class IndexTest extends TestCase
         $this->assertEquals('500000.00', $kantor->fresh()->saldo());
     }
 
+    public function test_user_bisa_edit_transfer(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+        $transfer = TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 300000, 'tanggal' => now(), 'keterangan' => 'sebelum revisi',
+        ]);
+
+        Livewire::test(Index::class)
+            ->call('edit', $transfer->id)
+            ->assertSet('jumlah', '300000.00')
+            ->set('jumlah', '450000')
+            ->set('keterangan', 'sesudah revisi')
+            ->call('simpan')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('transfer_saldo', [
+            'id' => $transfer->id, 'jumlah' => 450000, 'keterangan' => 'sesudah revisi',
+        ]);
+    }
+
+    public function test_edit_transfer_validasi_sama_seperti_tambah_baru(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+        $transfer = TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 300000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Index::class)
+            ->call('edit', $transfer->id)
+            ->set('kePembukuanId', (string) $pribadi->id) // sama dengan asal
+            ->call('simpan')
+            ->assertHasErrors(['kePembukuanId']);
+    }
+
+    public function test_user_bisa_hapus_transfer(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+        $transfer = TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 300000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Index::class)->call('hapus', $transfer->id);
+
+        $this->assertDatabaseMissing('transfer_saldo', ['id' => $transfer->id]);
+    }
+
+    public function test_hapus_transfer_membuat_saldo_kedua_pembukuan_kembali_normal(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $pribadi = Pembukuan::create(['nama' => 'Pribadi', 'tipe' => 'pribadi']);
+        $kantor = Pembukuan::create(['nama' => 'Kantor', 'tipe' => 'kantor']);
+        $transfer = TransferSaldo::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        $this->assertEquals('-500000.00', $pribadi->fresh()->saldo());
+        $this->assertEquals('500000.00', $kantor->fresh()->saldo());
+
+        Livewire::test(Index::class)->call('hapus', $transfer->id);
+
+        $this->assertEquals('0.00', $pribadi->fresh()->saldo());
+        $this->assertEquals('0.00', $kantor->fresh()->saldo());
+    }
+
     public function test_pencarian_menyaring_transfer_berdasarkan_keterangan_atau_nama_pembukuan(): void
     {
         $this->actingAs(User::factory()->create());

@@ -112,9 +112,34 @@
                         </p>
                     </div>
 
-                    <p class="font-bold text-slate-900 shrink-0 tabular-nums break-words max-w-[40%] text-right">
-                        Rp{{ number_format($transfer->jumlah, 0, ',', '.') }}
-                    </p>
+                    <div class="text-right shrink-0 max-w-[45%]">
+                        <p class="font-bold text-slate-900 tabular-nums break-words">
+                            Rp{{ number_format($transfer->jumlah, 0, ',', '.') }}
+                        </p>
+                        <div class="mt-1.5 flex justify-end items-center gap-2 text-sm">
+                            <button
+                                wire:click="edit({{ $transfer->id }})"
+                                class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 motion-safe:active:scale-[0.97]"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                wire:click="confirmHapus({{ $transfer->id }})"
+                                class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-semibold text-red-700 transition-all duration-200 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 motion-safe:active:scale-[0.97]"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+
+                        @if ($confirmingDeleteId === $transfer->id)
+                            @include('livewire._modal-konfirmasi-hapus', [
+                                'judul' => 'Hapus Transfer',
+                                'pesan' => 'Hapus transfer '.$transfer->dariPembukuan->nama.' -> '.$transfer->kePembukuan->nama.' sebesar Rp'.number_format($transfer->jumlah, 0, ',', '.').'? Tindakan ini tidak bisa dibatalkan.',
+                                'konfirmAction' => 'hapus('.$transfer->id.')',
+                                'batalAction' => 'batalHapus',
+                            ])
+                        @endif
+                    </div>
                 </div>
             </div>
         @empty
