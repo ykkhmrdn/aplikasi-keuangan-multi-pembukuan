@@ -10,7 +10,9 @@
 
         @livewireStyles
     </head>
-    <body class="min-h-screen bg-slate-50">
+    {{-- Background gradasi lembut, bukan flat lagi - identitas visual "mobile banking"
+         yang diminta client, dipakai konsisten di semua halaman lewat layout ini. --}}
+    <body class="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
         @php
             $navItems = [
                 ['route' => 'dashboard', 'params' => [], 'active' => request()->routeIs('dashboard'), 'label' => 'Dashboard'],
@@ -22,26 +24,31 @@
         @endphp
 
         {{-- Header: brand + logout selalu, link menu cuma tampil di desktop (mobile pakai tab bar bawah) --}}
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-            <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-                <span class="font-semibold text-slate-900 shrink-0">{{ config('app.name') }}</span>
+        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
+            <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+                <span class="font-extrabold tracking-tight text-slate-900 shrink-0 flex items-center gap-2">
+                    <span class="inline-flex w-8 h-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-sm font-bold shadow-md shadow-indigo-600/25">
+                        {{ Str::of(config('app.name'))->substr(0, 1) }}
+                    </span>
+                    {{ config('app.name') }}
+                </span>
 
                 <nav class="hidden sm:flex items-center gap-1 text-sm">
                     @foreach ($navItems as $item)
                         <a
                             href="{{ route($item['route'], $item['params']) }}"
-                            class="rounded-full px-3 py-1.5 font-medium transition-colors
-                                {{ $item['active'] ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}"
+                            class="rounded-full px-3.5 py-2 font-semibold transition-all duration-200
+                                {{ $item['active'] ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25' : 'text-slate-600 hover:bg-slate-100' }}"
                         >
                             {{ $item['label'] === 'Hutang' ? 'Hutang-Piutang' : $item['label'] }}
                         </a>
                     @endforeach
                 </nav>
 
-                <div class="flex items-center gap-3 shrink-0">
+                <div class="flex items-center gap-2 shrink-0">
                     <a
                         href="{{ route('ganti-password') }}"
-                        class="text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 rounded {{ request()->routeIs('ganti-password') ? 'text-slate-900' : '' }}"
+                        class="inline-flex w-9 h-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 {{ request()->routeIs('ganti-password') ? 'text-indigo-600 bg-indigo-50' : '' }}"
                         aria-label="Akun"
                         title="Akun"
                     >
@@ -55,7 +62,7 @@
                         @csrf
                         <button
                             type="submit"
-                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                            class="rounded-full border border-red-200 bg-red-50 px-3.5 py-2 text-sm font-semibold text-red-700 transition-all duration-200 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 motion-safe:active:scale-[0.97]"
                         >
                             Keluar
                         </button>
@@ -64,20 +71,22 @@
             </div>
         </header>
 
-        <main class="max-w-3xl mx-auto px-4 py-6 pb-24 sm:pb-6">
+        <main class="max-w-3xl mx-auto px-4 py-6 pb-28 sm:pb-6">
             {{ $slot }}
         </main>
 
-        {{-- Tab bar bawah: mobile saja, 5 slot rata jadi gak pernah overflow/butuh scroll --}}
-        <nav class="sm:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 pb-[env(safe-area-inset-bottom)]">
-            <div class="grid grid-cols-5">
+        {{-- Tab bar bawah: mobile saja, 5 slot rata jadi gak pernah overflow/butuh scroll.
+             Item aktif dapet pill background + warna gradient, bukan cuma ganti warna teks
+             kayak sebelumnya - ciri khas bottom nav app mobile banking. --}}
+        <nav class="sm:hidden fixed inset-x-0 bottom-0 z-40 bg-white/90 backdrop-blur-md border-t border-slate-200/80 pb-[env(safe-area-inset-bottom)]">
+            <div class="grid grid-cols-5 px-1.5 py-1.5">
                 @foreach ($navItems as $item)
                     <a
                         href="{{ route($item['route'], $item['params']) }}"
-                        class="flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 rounded-lg
-                            {{ $item['active'] ? 'text-slate-900' : 'text-slate-400' }}"
+                        class="flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl text-[11px] font-semibold transition-all duration-200 motion-safe:active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30
+                            {{ $item['active'] ? 'bg-gradient-to-b from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25' : 'text-slate-400 hover:bg-slate-100' }}"
                     >
-                        <span class="w-6 h-6">
+                        <span class="w-5 h-5">
                             @switch($item['label'])
                                 @case('Dashboard')
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-full h-full">

@@ -14,21 +14,21 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4"
     wire:click.self="{{ $batalAction }}"
 >
-    <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
-        <h3 class="text-base font-semibold text-slate-900">{{ $judul }}</h3>
+    <div class="w-full max-w-sm rounded-3xl bg-white p-5 shadow-xl shadow-slate-900/10">
+        <h3 class="text-base font-bold text-slate-900">{{ $judul }}</h3>
         <p class="mt-1.5 text-sm text-slate-600">{{ $pesan }}</p>
         <div class="mt-5 flex gap-2">
             <button
                 type="button"
                 wire:click="{{ $konfirmAction }}"
-                class="min-h-11 flex-1 rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                class="min-h-11 flex-1 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition-all duration-200 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 motion-safe:active:scale-[0.97]"
             >
                 Ya, Hapus
             </button>
             <button
                 type="button"
                 wire:click="{{ $batalAction }}"
-                class="min-h-11 flex-1 rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                class="min-h-11 flex-1 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 motion-safe:active:scale-[0.97]"
             >
                 Batal
             </button>

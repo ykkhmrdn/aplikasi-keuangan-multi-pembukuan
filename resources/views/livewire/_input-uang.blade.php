@@ -27,7 +27,7 @@
         :value="display"
         @input="raw = $event.target.value.replace(/[^0-9]/g, '')"
         placeholder="0"
-        class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-            {{ $errors->has($errorField) ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+        class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+            {{ $errors->has($errorField) ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
     >
 </div>
