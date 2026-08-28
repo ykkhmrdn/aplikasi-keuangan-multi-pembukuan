@@ -1,5 +1,11 @@
 <div>
-    <h1 class="text-xl font-semibold text-slate-900 mb-6 text-center">Masuk</h1>
+    <div class="flex flex-col items-center mb-7">
+        <span class="inline-flex w-12 h-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-lg font-extrabold shadow-lg shadow-indigo-600/25">
+            {{ Str::of(config('app.name'))->substr(0, 1) }}
+        </span>
+        <h1 class="text-xl font-extrabold text-slate-900 mt-3">Masuk</h1>
+        <p class="text-sm text-slate-500 mt-0.5">{{ config('app.name') }}</p>
+    </div>
 
     <form wire:submit="login">
         <div class="space-y-4">
@@ -11,7 +17,7 @@
                     wire:model="username"
                     autofocus
                     autocomplete="username"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10"
                 >
                 @error('username')
                     <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
@@ -26,7 +32,7 @@
                         id="password"
                         wire:model="password"
                         autocomplete="current-password"
-                        class="w-full rounded-lg border border-slate-300 pl-3 pr-10 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                        class="w-full rounded-xl border border-slate-200 pl-3 pr-10 py-2.5 text-slate-900 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10"
                     >
                     <button
                         type="button"
@@ -50,7 +56,7 @@
         </div>
 
         <label class="mt-5 flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-            <input type="checkbox" wire:model="remember" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:ring-offset-0">
+            <input type="checkbox" wire:model="remember" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-0">
             Ingat saya
         </label>
 
@@ -58,7 +64,7 @@
             type="submit"
             wire:loading.attr="disabled"
             wire:target="login"
-            class="mt-7 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white font-medium transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:opacity-50 motion-safe:active:scale-[0.98]"
+            class="mt-7 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white font-semibold shadow-md shadow-indigo-600/25 transition-all duration-200 hover:shadow-lg hover:shadow-indigo-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/40 disabled:opacity-50 motion-safe:active:scale-[0.98]"
         >
             <span wire:loading.remove wire:target="login">Masuk</span>
             <span wire:loading wire:target="login">Memproses...</span>
