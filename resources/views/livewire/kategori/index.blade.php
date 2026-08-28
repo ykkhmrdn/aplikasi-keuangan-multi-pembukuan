@@ -1,33 +1,23 @@
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Kategori</h1>
-        @unless ($showForm)
-            <button
-                wire:click="tambah"
-                class="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
-            >
-                + Tambah
-            </button>
-        @endunless
-    </div>
+    @include('livewire._page-header', ['judul' => 'Kategori', 'tombolLabel' => '+ Tambah', 'tombolAction' => 'tambah'])
 
     @if ($deleteErrorMessage)
-        <div class="rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
+        <div class="rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
             {{ $deleteErrorMessage }}
         </div>
     @endif
 
     {{-- Form tambah/edit --}}
     @if ($showForm)
-        <form wire:submit="simpan" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+        <form wire:submit="simpan" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5 space-y-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Nama</label>
                 <input
                     type="text"
                     wire:model="nama"
                     autofocus
-                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('nama') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                    class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('nama') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
                 >
                 @error('nama') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -37,8 +27,8 @@
                 <select
                     wire:model="tipe"
                     @if ($editingLocked) disabled @endif
-                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:text-slate-500
-                        {{ $errors->has('tipe') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                    class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:text-slate-500
+                        {{ $errors->has('tipe') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
                 >
                     @foreach ($tipeOptions as $option)
                         <option value="{{ $option->value }}">{{ $option->label() }}</option>
@@ -54,8 +44,8 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Pembukuan</label>
                 <select
                     wire:model="pembukuanId"
-                    class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('pembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                    class="w-full rounded-xl border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
+                        {{ $errors->has('pembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-indigo-400 focus:ring-indigo-600/10' }}"
                 >
                     <option value="global">Global (semua pembukuan)</option>
                     @foreach ($pembukuanList as $pembukuan)
@@ -70,14 +60,14 @@
                     type="submit"
                     wire:loading.attr="disabled"
                     wire:target="simpan"
-                    class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:opacity-50"
+                    class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all duration-200 hover:shadow-lg hover:shadow-indigo-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/40 disabled:opacity-50 motion-safe:active:scale-[0.97]"
                 >
                     Simpan
                 </button>
                 <button
                     type="button"
                     wire:click="batal"
-                    class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                    class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 motion-safe:active:scale-[0.97]"
                 >
                     Batal
                 </button>
@@ -85,30 +75,18 @@
         </form>
     @endif
 
-    {{-- Pencarian --}}
-    <div class="relative">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400">
-            <circle cx="11" cy="11" r="7" />
-            <path stroke-linecap="round" d="M21 21l-4.3-4.3" />
-        </svg>
-        <input
-            type="text"
-            wire:model.live.debounce.400ms="search"
-            placeholder="Cari nama kategori..."
-            class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-        >
-    </div>
+    @include('livewire._search-bar', ['placeholder' => 'Cari nama kategori...'])
 
     {{-- Filter & urutan --}}
     <div class="flex flex-wrap gap-2">
-        <select wire:model.live="filterTipe" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+        <select wire:model.live="filterTipe" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10">
             <option value="semua">Semua tipe</option>
             @foreach ($tipeOptions as $option)
                 <option value="{{ $option->value }}">{{ $option->label() }}</option>
             @endforeach
         </select>
 
-        <select wire:model.live="filterPembukuan" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+        <select wire:model.live="filterPembukuan" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10">
             <option value="semua">Semua pembukuan</option>
             <option value="global">Global</option>
             @foreach ($pembukuanList as $pembukuan)
@@ -116,7 +94,7 @@
             @endforeach
         </select>
 
-        <select wire:model.live="sort" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+        <select wire:model.live="sort" class="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10">
             <option value="nama_asc">Nama (A-Z)</option>
             <option value="nama_desc">Nama (Z-A)</option>
             <option value="terbaru">Terbaru ditambahkan</option>
@@ -124,43 +102,32 @@
         </select>
     </div>
 
-    {{-- List kategori. Badge pembukuan pakai warna identitas yang sama dengan Dashboard,
-         supaya kelihatan kategori itu punya pembukuan mana sekilas lihat. --}}
-    @php
-        $badgePembukuan = [
-            'pribadi' => 'bg-indigo-50 text-indigo-700',
-            'usaha' => 'bg-teal-50 text-teal-700',
-            'kantor' => 'bg-violet-50 text-violet-700',
-        ];
-    @endphp
+    {{-- List kategori --}}
     <div class="space-y-2">
         @forelse ($kategoriList as $kategori)
-            <div wire:key="kategori-{{ $kategori->id }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div wire:key="kategori-{{ $kategori->id }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-sm sm:text-base font-medium text-slate-900">{{ $kategori->nama }}</p>
+                        <p class="text-sm sm:text-base font-semibold text-slate-900">{{ $kategori->nama }}</p>
                         <div class="mt-1.5 flex gap-1.5">
-                            <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium
+                            <span class="inline-block rounded-full px-2.5 py-1 text-xs font-semibold
                                 {{ $kategori->tipe === \App\Enums\TipeTransaksi::Pemasukan ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }}">
                                 {{ $kategori->tipe->label() }}
                             </span>
-                            <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium
-                                {{ $kategori->pembukuan ? $badgePembukuan[$kategori->pembukuan->tipe->value] : 'bg-slate-100 text-slate-600' }}">
-                                {{ $kategori->pembukuan->nama ?? 'Global' }}
-                            </span>
+                            @include('livewire._badge-pembukuan', ['pembukuan' => $kategori->pembukuan])
                         </div>
                     </div>
 
                     <div class="flex shrink-0 items-center gap-2 text-sm">
                         <button
                             wire:click="edit({{ $kategori->id }})"
-                            class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                            class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 motion-safe:active:scale-[0.97]"
                         >
                             Edit
                         </button>
                         <button
                             wire:click="confirmHapus({{ $kategori->id }})"
-                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-700 transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30"
+                            class="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 font-semibold text-red-700 transition-all duration-200 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/30 motion-safe:active:scale-[0.97]"
                         >
                             Hapus
                         </button>
