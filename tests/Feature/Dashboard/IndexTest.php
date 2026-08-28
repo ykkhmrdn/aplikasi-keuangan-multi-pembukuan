@@ -8,7 +8,6 @@ use App\Models\HutangPiutang;
 use App\Models\Kategori;
 use App\Models\Pembukuan;
 use App\Models\Transaksi;
-use App\Models\TransferSaldo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -92,57 +91,72 @@ class IndexTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
         [$pribadi, $usaha] = $this->buatPembukuan();
-        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
 
-        Transaksi::create([
-            'pembukuan_id' => $usaha->id, 'kategori_id' => $kategori->id,
-            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 400000, 'tanggal' => now(),
-        ]);
-
+        // pakai entitas HTML mentah (&mdash;) - itu bentuk asli di response, bukan
+        // karakter em dash unicode yang cuma muncul setelah di-render browser
         Livewire::test(Dashboard::class)
             ->assertSet('pembukuanTerpilihId', $pribadi->id)
-            ->assertDontSee('Riwayat Usaha')
+            ->assertDontSee('&mdash; Usaha', false)
             ->call('pilihPembukuan', $usaha->id)
             ->assertSet('pembukuanTerpilihId', $usaha->id)
-            ->assertSee('Riwayat Usaha')
-            ->assertSeeInOrder(['Gaji', '400.000']);
+            ->assertSee('&mdash; Usaha', false);
     }
 
-    public function test_riwayat_gabungan_menampilkan_transaksi_transfer_dan_hutang_piutang(): void
-    {
-        $this->actingAs(User::factory()->create());
-        [$pribadi, $usaha, $kantor] = $this->buatPembukuan();
-        $kategori = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
-
-        Transaksi::create([
-            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
-            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 100000, 'tanggal' => '2026-08-01',
-        ]);
-        TransferSaldo::create([
-            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $usaha->id,
-            'jumlah' => 50000, 'tanggal' => '2026-08-02',
-        ]);
-        HutangPiutang::create([
-            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
-            'jumlah' => 30000, 'tanggal' => '2026-08-03',
-        ]);
-
-        Livewire::test(Dashboard::class)
-            ->assertSee('Gaji')
-            ->assertSee('Transfer ke Usaha')
-            ->assertSee('Bon ke Kantor');
-    }
-
-    public function test_ringkasan_outstanding_sesuai_pembukuan_terpilih(): void
+    public function test_hutang_detail_menampilkan_item_per_pembukuan(): void
     {
         $this->actingAs(User::factory()->create());
         [$pribadi, $usaha] = $this->buatPembukuan();
 
+        // pribadi kasih bon ke usaha = usaha berhutang ke pribadi
         HutangPiutang::create([
             'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $usaha->id,
             'jumlah' => 200000, 'tanggal' => now(),
         ]);
 
-        Livewire::test(Dashboard::class)->assertSeeInOrder(['Piutang', '200.000']);
+        Livewire::test(Dashboard::class)
+            ->call('pilihPembukuan', $usaha->id)
+            ->assertSeeInOrder(['Hutang (belum dibayar)', '200.000', 'Dari Pribadi'])
+            ->assertDontSee('Piutang');
+    }
+
+    public function test_analisis_pengeluaran_menampilkan_breakdown_per_kategori(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 150000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Dashboard::class)->assertSeeInOrder(['Belanja', '150.000', '100']);
+    }
+
+    public function test_kategori_baru_tanpa_transaksi_tetap_muncul_di_analisis(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->buatPembukuan();
+        Kategori::create(['nama' => 'Hiburan', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Livewire::test(Dashboard::class)->assertSeeInOrder(['Hiburan', 'Rp0']);
+    }
+
+    public function test_filter_periode_custom_membatasi_analisis_pengeluaran(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 150000, 'tanggal' => '2026-01-01',
+        ]);
+
+        Livewire::test(Dashboard::class)
+            ->set('periode', 'custom')
+            ->set('tanggalDari', '2026-08-01')
+            ->set('tanggalSampai', '2026-08-31')
+            ->assertSeeInOrder(['Belanja', 'Rp0']);
     }
 }

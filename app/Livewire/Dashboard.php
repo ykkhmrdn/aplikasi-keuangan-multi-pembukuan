@@ -2,25 +2,32 @@
 
 namespace App\Livewire;
 
+use App\Enums\StatusHutangPiutang;
 use App\Enums\TipeTransaksi;
-use App\Models\PelunasanHutang;
+use App\Models\Kategori;
 use App\Models\Pembukuan;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /**
- * Dashboard: kartu saldo tiap pembukuan, riwayat gabungan (transaksi +
- * transfer + hutang-piutang + pelunasan) per pembukuan, dan ringkasan
- * hutang-piutang outstanding (lihat docs/TODO.md, docs/DATABASE_DESIGN.md).
+ * Dashboard: kartu saldo tiap pembukuan, detail hutang outstanding per item,
+ * dan analisis pengeluaran per kategori dengan filter periode (lihat
+ * docs/TODO.md, docs/DATABASE_DESIGN.md, docs/DECISION_LOG.md).
  */
 #[Layout('layouts.app')]
 class Dashboard extends Component
 {
     public int $pembukuanTerpilihId;
 
-    /** Berapa item riwayat terbaru yang ditampilkan, biar dashboard tetap ringkas. */
-    private const JUMLAH_RIWAYAT = 15;
+    /** Preset periode analisis: harian/mingguan/bulanan/tahunan/semua/custom. */
+    public string $periode = 'bulanan';
+
+    /** Dipakai kalau periode = custom (rentang tanggal bebas). */
+    public string $tanggalDari = '';
+
+    public string $tanggalSampai = '';
 
     public function mount(): void
     {
@@ -32,6 +39,15 @@ class Dashboard extends Component
         $this->pembukuanTerpilihId = $id;
     }
 
+    public function updatedPeriode(): void
+    {
+        // ganti dari custom ke preset lain: bersihin rentang custom biar gak nyangkut
+        if ($this->periode !== 'custom') {
+            $this->tanggalDari = '';
+            $this->tanggalSampai = '';
+        }
+    }
+
     public function render()
     {
         $pembukuanList = Pembukuan::orderBy('id')->get();
@@ -40,91 +56,92 @@ class Dashboard extends Component
         return view('livewire.dashboard', [
             'pembukuanList' => $pembukuanList,
             'pembukuanTerpilih' => $pembukuanTerpilih,
-            'riwayat' => $this->riwayatGabungan($pembukuanTerpilih),
-            'piutangOutstanding' => $pembukuanTerpilih->piutangOutstanding(),
             'hutangOutstanding' => $pembukuanTerpilih->hutangOutstanding(),
+            'hutangDetail' => $this->hutangDetail($pembukuanTerpilih),
+            'analisisPengeluaran' => $this->analisisPengeluaran($pembukuanTerpilih),
         ]);
     }
 
     /**
-     * Gabungkan transaksi, transfer saldo, dan hutang-piutang (+ pelunasan)
-     * jadi satu riwayat urut tanggal, tanpa menggabungkan data di level
-     * penyimpanan (lihat docs/DECISION_LOG.md).
-     *
-     * Tiap sumber dibatasi orderByDesc+limit(JUMLAH_RIWAYAT) sebelum digabung,
-     * bukan ambil semua baris lalu potong belakangan — supaya query tetap
-     * ringan walau riwayat pembukuan sudah ratusan/ribuan baris (hasil akhir
-     * cuma butuh 15 teratas, dan 15 teratas gabungan pasti berasal dari 15
-     * teratas salah satu sumber, jadi aman dipotong di level query).
+     * Daftar hutang outstanding pembukuan ini (bon yang diterima, belum lunas),
+     * lengkap sama dari pembukuan mana asalnya - dipakai buat detail per-item
+     * di kartu Hutang (client minta di meeting 28 Agt 2026, gak cukup cuma total).
      */
-    private function riwayatGabungan(Pembukuan $pembukuan): Collection
+    private function hutangDetail(Pembukuan $pembukuan): Collection
     {
-        $terbaru = fn ($query) => $query->orderByDesc('tanggal')->orderByDesc('id')->limit(self::JUMLAH_RIWAYAT);
+        return $pembukuan->hutangDiterima()
+            ->where('status', StatusHutangPiutang::BelumLunas)
+            ->with(['dariPembukuan', 'pelunasan'])
+            ->orderByDesc('tanggal')
+            ->get();
+    }
 
-        $transaksi = $terbaru($pembukuan->transaksi()->with('kategori'))->get()->map(fn ($t) => [
-            'tanggal' => $t->tanggal,
-            'deskripsi' => $t->kategori->nama,
-            'jumlah' => $t->jumlah,
-            'arah' => $t->tipe === TipeTransaksi::Pemasukan ? 'masuk' : 'keluar',
-        ]);
+    /**
+     * Rentang tanggal dari periode terpilih. null = tanpa batas (dipakai buat
+     * preset "semua waktu" atau custom yang belum diisi).
+     *
+     * @return array{0: ?Carbon, 1: ?Carbon}
+     */
+    private function rentangTanggal(): array
+    {
+        $now = now();
 
-        $transferKeluar = $terbaru($pembukuan->transferKeluar()->with('kePembukuan'))->get()->map(fn ($t) => [
-            'tanggal' => $t->tanggal,
-            'deskripsi' => "Transfer ke {$t->kePembukuan->nama}",
-            'jumlah' => $t->jumlah,
-            'arah' => 'keluar',
-        ]);
+        return match ($this->periode) {
+            'harian' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            'mingguan' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+            'bulanan' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+            'tahunan' => [$now->copy()->startOfYear(), $now->copy()->endOfYear()],
+            'custom' => [
+                $this->tanggalDari !== '' ? Carbon::parse($this->tanggalDari)->startOfDay() : null,
+                $this->tanggalSampai !== '' ? Carbon::parse($this->tanggalSampai)->endOfDay() : null,
+            ],
+            default => [null, null], // 'semua'
+        };
+    }
 
-        $transferMasuk = $terbaru($pembukuan->transferMasuk()->with('dariPembukuan'))->get()->map(fn ($t) => [
-            'tanggal' => $t->tanggal,
-            'deskripsi' => "Transfer dari {$t->dariPembukuan->nama}",
-            'jumlah' => $t->jumlah,
-            'arah' => 'masuk',
-        ]);
+    /**
+     * Breakdown pengeluaran per kategori buat pembukuan + periode terpilih.
+     *
+     * Query mulai DARI Kategori (bukan dari Transaksi di-group), supaya kategori
+     * baru yang belum pernah dipakai tetap muncul di daftar sebagai Rp0 - ini
+     * eksplisit diminta client di meeting 28 Agt 2026.
+     */
+    private function analisisPengeluaran(Pembukuan $pembukuan): Collection
+    {
+        [$dari, $sampai] = $this->rentangTanggal();
 
-        $bonDiberikan = $terbaru($pembukuan->hutangDiberikan()->with('kePembukuan'))->get()->map(fn ($hp) => [
-            'tanggal' => $hp->tanggal,
-            'deskripsi' => "Bon ke {$hp->kePembukuan->nama}",
-            'jumlah' => $hp->jumlah,
-            'arah' => 'keluar',
-        ]);
+        $kategoriList = Kategori::where('tipe', TipeTransaksi::Pengeluaran)
+            ->where(function ($query) use ($pembukuan) {
+                $query->whereNull('pembukuan_id')->orWhere('pembukuan_id', $pembukuan->id);
+            })
+            ->get();
 
-        $bonDiterima = $terbaru($pembukuan->hutangDiterima()->with('dariPembukuan'))->get()->map(fn ($hp) => [
-            'tanggal' => $hp->tanggal,
-            'deskripsi' => "Bon dari {$hp->dariPembukuan->nama}",
-            'jumlah' => $hp->jumlah,
-            'arah' => 'masuk',
-        ]);
+        $totalPerKategori = $pembukuan->transaksi()
+            ->where('tipe', TipeTransaksi::Pengeluaran)
+            ->whereIn('kategori_id', $kategoriList->pluck('id'))
+            ->when($dari, fn ($query) => $query->where('tanggal', '>=', $dari))
+            ->when($sampai, fn ($query) => $query->where('tanggal', '<=', $sampai))
+            ->selectRaw('kategori_id, SUM(jumlah) as total')
+            ->groupBy('kategori_id')
+            ->pluck('total', 'kategori_id');
 
-        // pelunasan atas bon yang kita berikan = kita terima uang (kas masuk)
-        $pelunasanDiterima = $terbaru(PelunasanHutang::whereHas(
-            'hutangPiutang', fn ($q) => $q->where('dari_pembukuan_id', $pembukuan->id)
-        )->with('hutangPiutang.kePembukuan'))->get()->map(fn ($pl) => [
-            'tanggal' => $pl->tanggal,
-            'deskripsi' => "Pelunasan dari {$pl->hutangPiutang->kePembukuan->nama}",
-            'jumlah' => $pl->jumlah,
-            'arah' => 'masuk',
-        ]);
+        $totalKeseluruhan = $totalPerKategori->reduce(
+            fn ($total, $jumlah) => bcadd($total, (string) $jumlah, 2), '0.00'
+        );
 
-        // pelunasan atas bon yang kita terima = kita bayar (kas keluar)
-        $pelunasanDibayar = $terbaru(PelunasanHutang::whereHas(
-            'hutangPiutang', fn ($q) => $q->where('ke_pembukuan_id', $pembukuan->id)
-        )->with('hutangPiutang.dariPembukuan'))->get()->map(fn ($pl) => [
-            'tanggal' => $pl->tanggal,
-            'deskripsi' => "Pelunasan ke {$pl->hutangPiutang->dariPembukuan->nama}",
-            'jumlah' => $pl->jumlah,
-            'arah' => 'keluar',
-        ]);
+        return $kategoriList->map(function (Kategori $kategori) use ($totalPerKategori, $totalKeseluruhan) {
+            $jumlah = (string) ($totalPerKategori[$kategori->id] ?? '0.00');
+            $persen = bccomp($totalKeseluruhan, '0', 2) > 0
+                ? round((float) bcdiv($jumlah, $totalKeseluruhan, 6) * 100, 1)
+                : 0.0;
 
-        return $transaksi
-            ->concat($transferKeluar)
-            ->concat($transferMasuk)
-            ->concat($bonDiberikan)
-            ->concat($bonDiterima)
-            ->concat($pelunasanDiterima)
-            ->concat($pelunasanDibayar)
-            ->sortByDesc('tanggal')
-            ->take(self::JUMLAH_RIWAYAT)
+            return [
+                'kategori' => $kategori->nama,
+                'jumlah' => $jumlah,
+                'persen' => $persen,
+            ];
+        })
+            ->sortByDesc(fn ($item) => (float) $item['jumlah'])
             ->values();
     }
 }
