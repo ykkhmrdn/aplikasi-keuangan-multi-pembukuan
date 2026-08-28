@@ -1,8 +1,7 @@
 <div>
     <div class="flex flex-col items-center mb-7">
-        <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="w-14 h-14">
+        <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="w-16 h-16">
         <h1 class="text-xl font-bold text-slate-900 mt-3">Masuk</h1>
-        <p class="text-sm text-slate-500 mt-0.5">{{ config('app.name') }}</p>
     </div>
 
     <form wire:submit="login">

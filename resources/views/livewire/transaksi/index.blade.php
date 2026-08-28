@@ -9,7 +9,7 @@
 
     {{-- Form tambah/edit --}}
     @if ($showForm)
-        <form wire:submit="simpan" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5 space-y-4">
+        <form wire:submit="simpan" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5 space-y-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Tipe</label>
                 <select
@@ -114,7 +114,7 @@
     {{-- List transaksi --}}
     <div class="space-y-2">
         @forelse ($transaksiList as $transaksi)
-            <div wire:key="transaksi-{{ $transaksi->id }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
+            <div wire:key="transaksi-{{ $transaksi->id }}" class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm shadow-slate-900/5">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                         <p class="text-sm sm:text-base font-semibold text-slate-900 truncate">{{ $transaksi->kategori->nama }}</p>

@@ -11,9 +11,11 @@
 
         @livewireStyles
     </head>
-    {{-- Background putih dominan (bukan gradasi warna-warni lagi) - arah "biru-putih flat"
-         sesuai referensi client, gantiin gaya gradient blob mobile-banking sebelumnya. --}}
-    <body class="min-h-screen bg-slate-50">
+    {{-- Putih dominan tapi gak polos - blob dekoratif biru blur besar opacity rendah di
+         background (biru-putih tapi tetap ada kedalaman, bukan flat kosong). --}}
+    <body class="min-h-screen bg-slate-50 relative overflow-x-hidden">
+        <div class="pointer-events-none fixed -z-10 -top-32 -right-32 w-96 h-96 rounded-full bg-blue-200/40 blur-3xl" aria-hidden="true"></div>
+        <div class="pointer-events-none fixed -z-10 -bottom-40 -left-32 w-96 h-96 rounded-full bg-blue-100/50 blur-3xl" aria-hidden="true"></div>
         @php
             $navItems = [
                 ['route' => 'dashboard', 'params' => [], 'active' => request()->routeIs('dashboard'), 'label' => 'Dashboard'],
@@ -27,10 +29,9 @@
         {{-- Header: brand + logout selalu, link menu cuma tampil di desktop (mobile pakai tab bar bawah) --}}
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
             <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-                <span class="font-bold tracking-tight text-slate-900 shrink-0 flex items-center gap-2">
-                    <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="w-8 h-8">
-                    {{ config('app.name') }}
-                </span>
+                <a href="{{ route('dashboard') }}" class="shrink-0 flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30 rounded-lg">
+                    <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="w-10 h-10">
+                </a>
 
                 <nav class="hidden sm:flex items-center gap-1 text-sm">
                     @foreach ($navItems as $item)
