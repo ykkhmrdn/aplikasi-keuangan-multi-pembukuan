@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+/* pagination Livewire di-override di resources/views/vendor/livewire/tailwind.blade.php,
+   udah kescan otomatis (masih di dalam resources/views) - @source vendor Laravel yang
+   lama gak kepakai lagi (view itu emang gak pernah dirender, Livewire pakai view sendiri) */
 @source '../../storage/framework/views/*.php';
 
 @theme {
