@@ -32,11 +32,12 @@ class IndexTest extends TestCase
         $this->get("/hutang-piutang/{$pribadi->tipe->value}")->assertRedirect('/login');
     }
 
-    public function test_user_bisa_lihat_piutang_dan_hutang(): void
+    public function test_user_bisa_lihat_hutang_yang_diterima(): void
     {
         $this->actingAs(User::factory()->create());
         [$pribadi, $kantor] = $this->buatDuaPembukuan();
 
+        // pribadi kasih bon ke kantor = kantor berhutang ke pribadi
         HutangPiutang::create([
             'dari_pembukuan_id' => $pribadi->id,
             'ke_pembukuan_id' => $kantor->id,
@@ -44,9 +45,28 @@ class IndexTest extends TestCase
             'tanggal' => now(),
         ]);
 
+        // dilihat dari halaman Kantor (sisi yang berutang) - itu yang tampil
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->assertSee('Dari Pribadi')
+            ->assertSee('200.000')
+            ->assertDontSee('Piutang');
+    }
+
+    public function test_halaman_pemberi_bon_tidak_menampilkan_piutang(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+
+        HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 200000, 'tanggal' => now(),
+        ]);
+
+        // dilihat dari halaman Pribadi (sisi yang kasih bon) - bon ini gak tampil,
+        // karena sengaja cuma sisi Hutang yang ditampilkan (permintaan client)
         Livewire::test(Index::class, ['pembukuan' => $pribadi])
-            ->assertSee('Ke Kantor')
-            ->assertSee('200.000');
+            ->assertDontSee('Ke Kantor')
+            ->assertDontSee('200.000');
     }
 
     public function test_user_bisa_catat_bon_baru(): void
@@ -129,6 +149,117 @@ class IndexTest extends TestCase
             ->set('tanggal', now()->addYears(5)->format('Y-m-d'))
             ->call('simpan')
             ->assertHasErrors(['tanggal']);
+    }
+
+    public function test_user_bisa_edit_bon(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 200000, 'tanggal' => now(), 'keterangan' => 'bon awal',
+        ]);
+
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->call('edit', $hp->id)
+            ->assertSet('jumlah', '200000.00')
+            ->set('jumlah', '250000')
+            ->set('keterangan', 'bon direvisi')
+            ->call('simpan')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('hutang_piutang', [
+            'id' => $hp->id, 'jumlah' => 250000, 'keterangan' => 'bon direvisi',
+        ]);
+    }
+
+    public function test_edit_jumlah_tidak_boleh_kurang_dari_pelunasan_yang_sudah_dibayar(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+        PelunasanHutang::create(['hutang_piutang_id' => $hp->id, 'jumlah' => 300000, 'tanggal' => now()]);
+
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->call('edit', $hp->id)
+            ->set('jumlah', '200000') // di bawah 300rb yang udah dibayar
+            ->call('simpan')
+            ->assertHasErrors(['jumlah']);
+    }
+
+    public function test_edit_bon_yang_gak_melibatkan_pembukuan_ini_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $usaha = Pembukuan::create(['nama' => 'Usaha', 'tipe' => 'usaha']);
+
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('edit', $hp->id);
+    }
+
+    public function test_user_bisa_hapus_bon(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 200000, 'tanggal' => now(),
+        ]);
+
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->call('hapus', $hp->id);
+
+        $this->assertDatabaseMissing('hutang_piutang', ['id' => $hp->id]);
+    }
+
+    public function test_hapus_bon_yang_sudah_ada_pelunasan_tetap_boleh_dan_saldo_kembali_normal(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+        PelunasanHutang::create(['hutang_piutang_id' => $hp->id, 'jumlah' => 200000, 'tanggal' => now()]);
+
+        // sebelum hapus: pribadi minus 300rb (500rb keluar, 200rb pelunasan masuk), kantor plus 300rb
+        $this->assertEquals('-300000.00', $pribadi->fresh()->saldo());
+        $this->assertEquals('300000.00', $kantor->fresh()->saldo());
+
+        Livewire::test(Index::class, ['pembukuan' => $kantor])->call('hapus', $hp->id);
+
+        $this->assertDatabaseMissing('hutang_piutang', ['id' => $hp->id]);
+        $this->assertDatabaseMissing('pelunasan_hutang', ['hutang_piutang_id' => $hp->id]);
+        // saldo otomatis balik normal begitu bon + pelunasannya kehapus (cascade)
+        $this->assertEquals('0.00', $pribadi->fresh()->saldo());
+        $this->assertEquals('0.00', $kantor->fresh()->saldo());
+    }
+
+    public function test_hapus_bon_yang_gak_melibatkan_pembukuan_ini_ditolak(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $usaha = Pembukuan::create(['nama' => 'Usaha', 'tipe' => 'usaha']);
+
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+            ->call('hapus', $hp->id);
     }
 
     public function test_tanggal_pelunasan_yang_gak_masuk_akal_ditolak(): void
@@ -342,48 +473,40 @@ class IndexTest extends TestCase
             ->call('melunasi', $hp->id);
     }
 
-    public function test_pencarian_menyaring_piutang_dan_hutang_berdasarkan_keterangan_atau_nama_pembukuan(): void
+    public function test_pencarian_menyaring_hutang_berdasarkan_keterangan_atau_nama_pembukuan(): void
     {
         $this->actingAs(User::factory()->create());
         [$pribadi, $kantor] = $this->buatDuaPembukuan();
         $usaha = Pembukuan::create(['nama' => 'Usaha', 'tipe' => 'usaha']);
 
-        // piutang: pribadi kasih bon ke kantor & ke usaha
+        // dua bon yang sama-sama diterima Kantor, dari pemberi berbeda
         HutangPiutang::create([
             'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 100000, 'tanggal' => now(), 'keterangan' => 'bon dana kas kecil',
         ]);
         HutangPiutang::create([
-            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $usaha->id,
+            'dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $kantor->id,
             'jumlah' => 200000, 'tanggal' => now(),
         ]);
-        // hutang: kantor kasih bon ke pribadi
-        HutangPiutang::create([
-            'dari_pembukuan_id' => $kantor->id, 'ke_pembukuan_id' => $pribadi->id,
-            'jumlah' => 50000, 'tanggal' => now(),
-        ]);
 
-        Livewire::test(Index::class, ['pembukuan' => $pribadi])
-            ->set('search', 'kantor')
-            ->assertSee('100.000') // piutang ke Kantor cocok
-            ->assertDontSee('200.000') // piutang ke Usaha gak cocok
-            ->assertSee('50.000'); // hutang dari Kantor cocok
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->set('search', 'pribadi')
+            ->assertSee('100.000') // dari Pribadi cocok
+            ->assertDontSee('200.000'); // dari Usaha gak cocok
     }
 
-    public function test_pencarian_reset_ke_halaman_pertama_untuk_kedua_section(): void
+    public function test_pencarian_reset_ke_halaman_pertama(): void
     {
         $this->actingAs(User::factory()->create());
         [$pribadi] = $this->buatDuaPembukuan();
 
         Livewire::test(Index::class, ['pembukuan' => $pribadi])
-            ->call('setPage', 2, 'piutangPage')
-            ->call('setPage', 2, 'hutangPage')
+            ->call('setPage', 2)
             ->set('search', 'apa saja')
-            ->assertSet('paginators.piutangPage', 1)
-            ->assertSet('paginators.hutangPage', 1);
+            ->assertSet('paginators.page', 1);
     }
 
-    public function test_urutan_jumlah_terbesar_menampilkan_piutang_besar_lebih_dulu(): void
+    public function test_urutan_jumlah_terbesar_menampilkan_bon_besar_lebih_dulu(): void
     {
         $this->actingAs(User::factory()->create());
         [$pribadi, $kantor] = $this->buatDuaPembukuan();
@@ -397,14 +520,14 @@ class IndexTest extends TestCase
             'jumlah' => 900000, 'tanggal' => now(),
         ]);
 
-        $html = Livewire::test(Index::class, ['pembukuan' => $pribadi])
+        $html = Livewire::test(Index::class, ['pembukuan' => $kantor])
             ->set('sort', 'jumlah_terbesar')
             ->html();
 
         $this->assertTrue(strpos($html, '900.000') < strpos($html, '100.000'));
     }
 
-    public function test_daftar_piutang_dipaginasi_10_per_halaman(): void
+    public function test_daftar_hutang_dipaginasi_10_per_halaman(): void
     {
         $this->actingAs(User::factory()->create());
         [$pribadi, $kantor] = $this->buatDuaPembukuan();
@@ -420,10 +543,10 @@ class IndexTest extends TestCase
             ]);
         }
 
-        Livewire::test(Index::class, ['pembukuan' => $pribadi])
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
             ->assertSee('Bon ke-15') // terbaru, harus di halaman 1
             ->assertDontSee('Bon ke-01') // terlama, harus di halaman 2
-            ->call('nextPage', 'piutangPage')
+            ->call('nextPage')
             ->assertSee('Bon ke-01');
     }
 }

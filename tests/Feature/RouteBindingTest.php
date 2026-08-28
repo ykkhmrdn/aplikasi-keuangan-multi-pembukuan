@@ -67,7 +67,10 @@ class RouteBindingTest extends TestCase
             'jumlah' => 333000, 'tanggal' => now(), 'keterangan' => 'bon pribadi ke kantor',
         ]);
 
-        $this->get('/hutang-piutang/pribadi')->assertSee('bon pribadi ke kantor');
+        // cuma sisi Hutang (penerima bon) yang ditampilkan - Kantor (berutang) lihat,
+        // Pribadi (pemberi/piutang) dan Usaha (gak terlibat) sama-sama gak lihat
+        $this->get('/hutang-piutang/kantor')->assertSee('bon pribadi ke kantor');
+        $this->get('/hutang-piutang/pribadi')->assertDontSee('bon pribadi ke kantor');
         $this->get('/hutang-piutang/usaha')->assertDontSee('bon pribadi ke kantor');
     }
 }

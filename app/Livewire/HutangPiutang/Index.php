@@ -18,13 +18,15 @@ class Index extends Component
 
     public Pembukuan $pembukuan;
 
-    // pencarian & urutan tampilan, berlaku buat section Piutang maupun Hutang
+    // pencarian & urutan tampilan
     public string $search = '';
 
     public string $sort = 'tanggal_terbaru';
 
-    // state form catat bon baru
+    // state form catat/edit bon
     public bool $showForm = false;
+
+    public ?int $editingId = null;
 
     public string $dariPembukuanId = '';
 
@@ -35,6 +37,9 @@ class Index extends Component
     public string $tanggal = '';
 
     public string $keterangan = '';
+
+    // state hapus
+    public ?int $confirmingDeleteId = null;
 
     // state form pelunasan
     public ?int $melunasiId = null;
@@ -47,29 +52,23 @@ class Index extends Component
 
     public function updatedSearch(): void
     {
-        $this->resetPage('piutangPage');
-        $this->resetPage('hutangPage');
+        $this->resetPage();
     }
 
     public function updatedSort(): void
     {
-        $this->resetPage('piutangPage');
-        $this->resetPage('hutangPage');
+        $this->resetPage();
     }
 
     public function render()
     {
-        $piutangQuery = $this->pembukuan->hutangDiberikan()->with(['kePembukuan', 'pelunasan']);
+        // hanya bon yang DITERIMA pembukuan ini (hutang) yang ditampilkan - sisi
+        // "piutang" sengaja dihilangkan dari tampilan sesuai permintaan client
+        // (meeting 28 Agt 2026), tapi bon yang sama tetap muncul normal di halaman
+        // pembukuan lawan (yang menerima bon dari pembukuan ini)
         $hutangQuery = $this->pembukuan->hutangDiterima()->with(['dariPembukuan', 'pelunasan']);
 
         if ($this->search !== '') {
-            $piutangQuery->where(function ($q) {
-                $q->where('keterangan', 'like', '%'.$this->search.'%')
-                    ->orWhereHas('kePembukuan', function ($pembukuanQuery) {
-                        $pembukuanQuery->where('nama', 'like', '%'.$this->search.'%');
-                    });
-            });
-
             $hutangQuery->where(function ($q) {
                 $q->where('keterangan', 'like', '%'.$this->search.'%')
                     ->orWhereHas('dariPembukuan', function ($pembukuanQuery) {
@@ -78,20 +77,16 @@ class Index extends Component
             });
         }
 
-        foreach ([$piutangQuery, $hutangQuery] as $query) {
-            match ($this->sort) {
-                'tanggal_terlama' => $query->orderBy('tanggal')->orderBy('id'),
-                'jumlah_terbesar' => $query->orderByDesc('jumlah'),
-                'jumlah_terkecil' => $query->orderBy('jumlah'),
-                default => $query->orderByDesc('tanggal')->orderByDesc('id'), // tanggal_terbaru
-            };
-        }
+        match ($this->sort) {
+            'tanggal_terlama' => $hutangQuery->orderBy('tanggal')->orderBy('id'),
+            'jumlah_terbesar' => $hutangQuery->orderByDesc('jumlah'),
+            'jumlah_terkecil' => $hutangQuery->orderBy('jumlah'),
+            default => $hutangQuery->orderByDesc('tanggal')->orderByDesc('id'), // tanggal_terbaru
+        };
 
         return view('livewire.hutang-piutang.index', [
-            'piutangList' => $piutangQuery->paginate(10, pageName: 'piutangPage'),
-            'hutangList' => $hutangQuery->paginate(10, pageName: 'hutangPage'),
+            'hutangList' => $hutangQuery->paginate(10),
             'pembukuanList' => Pembukuan::orderBy('id')->get(),
-            'piutangOutstanding' => $this->pembukuan->piutangOutstanding(),
             'hutangOutstanding' => $this->pembukuan->hutangOutstanding(),
         ]);
     }
@@ -103,6 +98,19 @@ class Index extends Component
         $this->showForm = true;
     }
 
+    public function edit(int $id): void
+    {
+        $hutangPiutang = $this->hutangPiutangScoped()->findOrFail($id);
+
+        $this->editingId = $hutangPiutang->id;
+        $this->dariPembukuanId = (string) $hutangPiutang->dari_pembukuan_id;
+        $this->kePembukuanId = (string) $hutangPiutang->ke_pembukuan_id;
+        $this->jumlah = (string) $hutangPiutang->jumlah;
+        $this->tanggal = $hutangPiutang->tanggal->format('Y-m-d');
+        $this->keterangan = (string) $hutangPiutang->keterangan;
+        $this->showForm = true;
+    }
+
     public function batal(): void
     {
         $this->resetForm();
@@ -111,6 +119,12 @@ class Index extends Component
 
     public function simpan(): void
     {
+        // kalau lagi edit bon yang sudah ada pelunasan, jumlah gak boleh diedit
+        // jadi lebih kecil dari total yang udah dibayar (integritas data)
+        $totalPelunasanSaatIni = $this->editingId
+            ? (string) PelunasanHutang::where('hutang_piutang_id', $this->editingId)->sum('jumlah')
+            : '0.00';
+
         $this->validate([
             'dariPembukuanId' => ['required', 'exists:pembukuan,id'],
             'kePembukuanId' => [
@@ -122,9 +136,16 @@ class Index extends Component
                     }
                 },
             ],
-            'jumlah' => ['required', 'numeric', 'min:0.01'],
+            'jumlah' => [
+                'required', 'numeric', 'min:0.01',
+                function ($attribute, $value, $fail) use ($totalPelunasanSaatIni) {
+                    if ($this->editingId && bccomp((string) $value, $totalPelunasanSaatIni, 2) < 0) {
+                        $fail('Jumlah tidak boleh kurang dari total pelunasan yang sudah dicatat (Rp'.number_format($totalPelunasanSaatIni, 0, ',', '.').').');
+                    }
+                },
+            ],
             // batas 10 tahun ke belakang & 1 tahun ke depan, cuma nangkep typo tahun,
-            // bukan larangan backdate (lihat alasan lengkap di docs/DECISION_LOG.md)
+            // bukan larangan backdate wajar (lihat alasan lengkap di docs/DECISION_LOG.md)
             'tanggal' => ['required', 'date', 'after_or_equal:'.now()->subYears(10)->format('Y-m-d'), 'before_or_equal:'.now()->addYear()->format('Y-m-d')],
             'keterangan' => ['nullable', 'string', 'max:1000'],
         ], [], [
@@ -135,16 +156,46 @@ class Index extends Component
             'keterangan' => 'keterangan',
         ]);
 
-        HutangPiutang::create([
+        $data = [
             'dari_pembukuan_id' => $this->dariPembukuanId,
             'ke_pembukuan_id' => $this->kePembukuanId,
             'jumlah' => $this->jumlah,
             'tanggal' => $this->tanggal,
             'keterangan' => $this->keterangan !== '' ? $this->keterangan : null,
-        ]);
+        ];
+
+        if ($this->editingId) {
+            $hutangPiutang = $this->hutangPiutangScoped()->findOrFail($this->editingId);
+            $hutangPiutang->update($data);
+            $this->sinkronStatus($hutangPiutang);
+        } else {
+            HutangPiutang::create($data);
+        }
 
         $this->resetForm();
         $this->showForm = false;
+    }
+
+    public function confirmHapus(int $id): void
+    {
+        $this->confirmingDeleteId = $id;
+    }
+
+    public function batalHapus(): void
+    {
+        $this->confirmingDeleteId = null;
+    }
+
+    /**
+     * Hapus selalu boleh, termasuk bon yang sudah ada pelunasannya (keputusan
+     * client, lihat docs/DECISION_LOG.md). "Refund" saldo otomatis tanpa logic
+     * tambahan - Pembukuan::saldo() dihitung dinamis tiap render, dan baris
+     * pelunasan_hutang ikut kehapus lewat cascadeOnDelete di migration.
+     */
+    public function hapus(int $id): void
+    {
+        $this->hutangPiutangScoped()->findOrFail($id)->delete();
+        $this->confirmingDeleteId = null;
     }
 
     public function melunasi(int $id): void
@@ -223,9 +274,25 @@ class Index extends Component
         $this->batalMelunasi();
     }
 
+    /** Hitung ulang status lunas/belum berdasarkan sisa outstanding terbaru - dipanggil setelah edit jumlah bon. */
+    private function sinkronStatus(HutangPiutang $hutangPiutang): void
+    {
+        $hutangPiutang->refresh();
+        $sisa = $hutangPiutang->sisaOutstanding();
+
+        if (bccomp($sisa, '0', 2) <= 0) {
+            $hutangPiutang->update([
+                'status' => StatusHutangPiutang::Lunas,
+                'tanggal_lunas' => $hutangPiutang->tanggal_lunas?->format('Y-m-d') ?? now()->format('Y-m-d'),
+            ]);
+        } else {
+            $hutangPiutang->update(['status' => StatusHutangPiutang::BelumLunas, 'tanggal_lunas' => null]);
+        }
+    }
+
     private function resetForm(): void
     {
-        $this->reset(['dariPembukuanId', 'kePembukuanId', 'jumlah', 'keterangan']);
+        $this->reset(['editingId', 'dariPembukuanId', 'kePembukuanId', 'jumlah', 'keterangan']);
         $this->tanggal = now()->format('Y-m-d');
     }
 

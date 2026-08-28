@@ -1,49 +1,20 @@
 <div class="space-y-6">
-    {{-- Switcher pembukuan, warna pill aktif sesuai identitas pembukuan --}}
-    @php
-        $accentPill = [
-            'pribadi' => 'bg-blue-600 text-white',
-            'usaha' => 'bg-teal-600 text-white',
-            'kantor' => 'bg-violet-600 text-white',
-        ];
-    @endphp
-    <div class="flex gap-2">
-        @foreach (\App\Enums\TipePembukuan::cases() as $tipePembukuan)
-            <a
-                href="{{ route('hutang-piutang.index', $tipePembukuan->value) }}"
-                class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors
-                    {{ $pembukuan->tipe === $tipePembukuan ? $accentPill[$tipePembukuan->value] : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
-            >
-                {{ $tipePembukuan->label() }}
-            </a>
-        @endforeach
+    @include('livewire._pill-switcher', ['pembukuan' => $pembukuan, 'routeName' => 'hutang-piutang.index'])
+
+    @include('livewire._page-header', [
+        'judul' => 'Hutang '.$pembukuan->nama,
+        'tombolLabel' => '+ Catat Bon',
+        'tombolAction' => 'tambah',
+    ])
+
+    {{-- Ringkasan outstanding - Piutang sengaja dihapus dari tampilan (permintaan
+         client, lihat docs/DECISION_LOG.md 28 Agt 2026), cuma Hutang yang tersisa --}}
+    <div class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
+        <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
     </div>
 
-    <div class="flex items-center justify-between">
-        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Hutang-Piutang {{ $pembukuan->nama }}</h1>
-        @unless ($showForm)
-            <button
-                wire:click="tambah"
-                class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30"
-            >
-                + Catat Bon
-            </button>
-        @endunless
-    </div>
-
-    {{-- Ringkasan outstanding --}}
-    <div class="grid grid-cols-2 gap-3">
-        <div class="min-w-0 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Piutang (belum diterima)</p>
-            <p class="mt-1 text-lg font-semibold text-emerald-700 tabular-nums break-words">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
-        </div>
-        <div class="min-w-0 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
-            <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
-        </div>
-    </div>
-
-    {{-- Form catat bon baru --}}
+    {{-- Form catat/edit bon --}}
     @if ($showForm)
         <form wire:submit="simpan" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
             <div>
@@ -124,22 +95,10 @@
         </form>
     @endif
 
-    {{-- Pencarian & urutan, berlaku buat section Piutang maupun Hutang sekaligus --}}
-    <div class="relative">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400">
-            <circle cx="11" cy="11" r="7" />
-            <path stroke-linecap="round" d="M21 21l-4.3-4.3" />
-        </svg>
-        <input
-            type="text"
-            wire:model.live.debounce.400ms="search"
-            placeholder="Cari keterangan atau nama pembukuan..."
-            class="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm text-slate-700 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10"
-        >
-    </div>
+    @include('livewire._search-bar', ['placeholder' => 'Cari keterangan atau nama pembukuan...'])
 
     <div class="flex flex-wrap gap-2">
-        <select wire:model.live="sort" class="rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10">
+        <select wire:model.live="sort" class="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 shadow-sm transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10">
             <option value="tanggal_terbaru">Tanggal terbaru</option>
             <option value="tanggal_terlama">Tanggal terlama</option>
             <option value="jumlah_terbesar">Jumlah terbesar</option>
@@ -147,41 +106,20 @@
         </select>
     </div>
 
-    {{-- Section: Piutang (yang diberikan pembukuan ini) --}}
-    <div>
-        <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Piutang &mdash; bon yang diberikan</h2>
-        <div class="space-y-2">
-            @forelse ($piutangList as $hp)
-                @include('livewire.hutang-piutang._kartu-bon', ['hp' => $hp, 'arahLabel' => 'Ke', 'lawan' => $hp->kePembukuan, 'keyPrefix' => 'piutang'])
-            @empty
-                <p class="text-sm text-slate-500 text-center py-4">
-                    {{ $search !== '' ? 'Gak ada piutang yang cocok dengan pencarian.' : 'Belum ada piutang.' }}
-                </p>
-            @endforelse
-        </div>
-        @if ($piutangList->hasPages())
-            <div class="pt-2">
-                {{ $piutangList->links() }}
-            </div>
-        @endif
+    {{-- Daftar hutang (bon yang diterima pembukuan ini) --}}
+    <div class="space-y-2">
+        @forelse ($hutangList as $hp)
+            @include('livewire.hutang-piutang._kartu-bon', ['hp' => $hp])
+        @empty
+            <p class="text-sm text-slate-500 text-center py-6">
+                {{ $search !== '' ? 'Gak ada hutang yang cocok dengan pencarian.' : 'Belum ada hutang.' }}
+            </p>
+        @endforelse
     </div>
 
-    {{-- Section: Hutang (yang diterima pembukuan ini) --}}
-    <div>
-        <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Hutang &mdash; bon yang diterima</h2>
-        <div class="space-y-2">
-            @forelse ($hutangList as $hp)
-                @include('livewire.hutang-piutang._kartu-bon', ['hp' => $hp, 'arahLabel' => 'Dari', 'lawan' => $hp->dariPembukuan, 'keyPrefix' => 'hutang'])
-            @empty
-                <p class="text-sm text-slate-500 text-center py-4">
-                    {{ $search !== '' ? 'Gak ada hutang yang cocok dengan pencarian.' : 'Belum ada hutang.' }}
-                </p>
-            @endforelse
+    @if ($hutangList->hasPages())
+        <div class="pt-2">
+            {{ $hutangList->links() }}
         </div>
-        @if ($hutangList->hasPages())
-            <div class="pt-2">
-                {{ $hutangList->links() }}
-            </div>
-        @endif
-    </div>
+    @endif
 </div>
