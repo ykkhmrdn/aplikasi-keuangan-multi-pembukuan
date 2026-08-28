@@ -2,7 +2,7 @@
     {{-- Switcher pembukuan, warna pill aktif sesuai identitas pembukuan --}}
     @php
         $accentPill = [
-            'pribadi' => 'bg-indigo-600 text-white',
+            'pribadi' => 'bg-blue-600 text-white',
             'usaha' => 'bg-teal-600 text-white',
             'kantor' => 'bg-violet-600 text-white',
         ];
@@ -12,7 +12,7 @@
             <a
                 href="{{ route('hutang-piutang.index', $tipePembukuan->value) }}"
                 class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors
-                    {{ $pembukuan->tipe === $tipePembukuan ? $accentPill[$tipePembukuan->value] : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50' }}"
+                    {{ $pembukuan->tipe === $tipePembukuan ? $accentPill[$tipePembukuan->value] : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}"
             >
                 {{ $tipePembukuan->label() }}
             </a>
@@ -24,7 +24,7 @@
         @unless ($showForm)
             <button
                 wire:click="tambah"
-                class="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
+                class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30"
             >
                 + Catat Bon
             </button>
@@ -33,11 +33,11 @@
 
     {{-- Ringkasan outstanding --}}
     <div class="grid grid-cols-2 gap-3">
-        <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="min-w-0 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Piutang (belum diterima)</p>
             <p class="mt-1 text-lg font-semibold text-emerald-700 tabular-nums break-words">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
         </div>
-        <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="min-w-0 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
             <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
         </div>
@@ -51,7 +51,7 @@
                 <select
                     wire:model="dariPembukuanId"
                     class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('dariPembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                        {{ $errors->has('dariPembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 >
                     <option value="">Pilih pembukuan</option>
                     @foreach ($pembukuanList as $p)
@@ -66,7 +66,7 @@
                 <select
                     wire:model="kePembukuanId"
                     class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('kePembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                        {{ $errors->has('kePembukuanId') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 >
                     <option value="">Pilih pembukuan</option>
                     @foreach ($pembukuanList as $p)
@@ -88,7 +88,7 @@
                     type="date"
                     wire:model="tanggal"
                     class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('tanggal') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                        {{ $errors->has('tanggal') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 >
                 @error('tanggal') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -99,7 +99,7 @@
                     wire:model="keterangan"
                     rows="2"
                     class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2
-                        {{ $errors->has('keterangan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-300 focus:border-slate-500 focus:ring-slate-900/10' }}"
+                        {{ $errors->has('keterangan') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 focus:border-blue-400 focus:ring-blue-600/10' }}"
                 ></textarea>
                 @error('keterangan') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -109,14 +109,14 @@
                     type="submit"
                     wire:loading.attr="disabled"
                     wire:target="simpan"
-                    class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:opacity-50"
+                    class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30 disabled:opacity-50"
                 >
                     Simpan
                 </button>
                 <button
                     type="button"
                     wire:click="batal"
-                    class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                    class="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20"
                 >
                     Batal
                 </button>
@@ -134,12 +134,12 @@
             type="text"
             wire:model.live.debounce.400ms="search"
             placeholder="Cari keterangan atau nama pembukuan..."
-            class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            class="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm text-slate-700 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10"
         >
     </div>
 
     <div class="flex flex-wrap gap-2">
-        <select wire:model.live="sort" class="rounded-lg border border-slate-300 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+        <select wire:model.live="sort" class="rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10">
             <option value="tanggal_terbaru">Tanggal terbaru</option>
             <option value="tanggal_terlama">Tanggal terlama</option>
             <option value="jumlah_terbesar">Jumlah terbesar</option>
