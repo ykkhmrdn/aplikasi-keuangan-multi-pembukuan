@@ -18,7 +18,7 @@
     @if ($showForm)
         <form wire:submit="simpan" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Pembukuan Pemberi (berpiutang)</label>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Pembukuan Pemberi</label>
                 <select
                     wire:model="dariPembukuanId"
                     class="w-full rounded-lg border px-3 py-2.5 text-slate-900 transition-colors focus:outline-none focus:ring-2

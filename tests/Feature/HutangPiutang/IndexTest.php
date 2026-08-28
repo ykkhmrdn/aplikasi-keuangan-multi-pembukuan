@@ -461,7 +461,6 @@ class IndexTest extends TestCase
             'jumlah' => 50000, 'tanggal' => now(),
         ]);
 
-        $this->assertEquals('200000.00', $pribadi->piutangOutstanding());
         $this->assertEquals('50000.00', $pribadi->hutangOutstanding());
     }
 

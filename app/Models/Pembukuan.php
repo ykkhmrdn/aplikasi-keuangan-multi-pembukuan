@@ -94,15 +94,6 @@ class Pembukuan extends Model
         return bcsub($masuk, $keluar, 2);
     }
 
-    /** Total piutang outstanding (bon yang diberikan, belum dilunasi lawan). */
-    public function piutangOutstanding(): string
-    {
-        return $this->hutangDiberikan()
-            ->where('status', StatusHutangPiutang::BelumLunas)
-            ->get()
-            ->reduce(fn ($total, HutangPiutang $hp) => bcadd($total, $hp->sisaOutstanding(), 2), '0.00');
-    }
-
     /** Total hutang outstanding (bon yang diterima, belum dilunasi ke lawan). */
     public function hutangOutstanding(): string
     {

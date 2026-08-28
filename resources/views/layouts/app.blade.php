@@ -40,7 +40,7 @@
                             class="rounded-lg px-3.5 py-2 font-semibold transition-colors
                                 {{ $item['active'] ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100' }}"
                         >
-                            {{ $item['label'] === 'Hutang' ? 'Hutang-Piutang' : $item['label'] }}
+                            {{ $item['label'] }}
                         </a>
                     @endforeach
                 </nav>
