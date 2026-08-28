@@ -1,8 +1,11 @@
 <div class="space-y-6">
-    <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
+    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Dashboard</h1>
 
-    {{-- Kartu saldo tiap pembukuan, sekaligus switcher. Tiap pembukuan punya warna identitas
-         sendiri (indigo/teal/violet) supaya sekali lihat langsung kebedain (docs/DECISION_LOG.md). --}}
+    {{-- Kartu saldo tiap pembukuan, sekaligus switcher - SIGNATURE ELEMENT aplikasi ini
+         (satu-satunya tempat 3 pembukuan tampil sekaligus). Kartu aktif dapet gradient fill
+         penuh + shadow berwarna (bukan cuma border kayak sebelumnya), kartu non-aktif tetap
+         putih/quiet - biar yang aktif jelas paling menonjol. Warna gradient sesuai identitas
+         pembukuan (indigo/teal/violet), dipertahankan dari sistem yang sudah ada. --}}
     <div class="grid grid-cols-3 gap-3">
         @foreach ($pembukuanList as $p)
             @php
@@ -14,28 +17,30 @@
                 $saldoMinus = bccomp($saldo, '0', 2) < 0;
                 $saldoAbs = $saldoMinus ? bcmul($saldo, '-1', 2) : $saldo;
                 $accent = match ($p->tipe) {
-                    \App\Enums\TipePembukuan::Pribadi => ['dot' => 'bg-indigo-500', 'bar' => 'bg-indigo-500', 'ring' => 'ring-indigo-500/30', 'border' => 'border-indigo-300'],
-                    \App\Enums\TipePembukuan::Usaha => ['dot' => 'bg-teal-500', 'bar' => 'bg-teal-500', 'ring' => 'ring-teal-500/30', 'border' => 'border-teal-300'],
-                    \App\Enums\TipePembukuan::Kantor => ['dot' => 'bg-violet-500', 'bar' => 'bg-violet-500', 'ring' => 'ring-violet-500/30', 'border' => 'border-violet-300'],
+                    \App\Enums\TipePembukuan::Pribadi => ['dot' => 'bg-indigo-500', 'gradient' => 'bg-gradient-to-br from-indigo-600 to-indigo-500', 'shadow' => 'shadow-lg shadow-indigo-600/25', 'label' => 'text-indigo-100'],
+                    \App\Enums\TipePembukuan::Usaha => ['dot' => 'bg-teal-500', 'gradient' => 'bg-gradient-to-br from-teal-600 to-teal-500', 'shadow' => 'shadow-lg shadow-teal-600/25', 'label' => 'text-teal-100'],
+                    \App\Enums\TipePembukuan::Kantor => ['dot' => 'bg-violet-500', 'gradient' => 'bg-gradient-to-br from-violet-600 to-violet-500', 'shadow' => 'shadow-lg shadow-violet-600/25', 'label' => 'text-violet-100'],
                 };
             @endphp
             <button
                 wire:click="pilihPembukuan({{ $p->id }})"
-                class="relative min-w-0 rounded-xl border bg-white py-3 pl-4 pr-2 text-left shadow-sm transition-colors
-                    {{ $aktif ? $accent['border'].' ring-2 '.$accent['ring'] : 'border-slate-200 hover:border-slate-300' }}"
+                class="relative min-w-0 rounded-2xl py-3.5 px-3.5 text-left transition-all duration-200 motion-safe:active:scale-[0.97]
+                    {{ $aktif ? $accent['gradient'].' '.$accent['shadow'] : 'bg-white border border-slate-200 shadow-sm shadow-slate-900/5 hover:border-slate-300' }}"
             >
-                <span class="absolute inset-y-0 left-0 w-1 rounded-l-xl {{ $accent['bar'] }}"></span>
-                <p class="flex items-center gap-1.5 text-xs text-slate-500">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full {{ $accent['dot'] }}"></span>
+                <p class="flex items-center gap-1.5 text-xs font-medium {{ $aktif ? $accent['label'] : 'text-slate-500' }}">
+                    @unless ($aktif)
+                        <span class="inline-block w-1.5 h-1.5 rounded-full {{ $accent['dot'] }}"></span>
+                    @endunless
                     {{ $p->nama }}
                 </p>
                 {{-- break-words + min-w-0 di button: angka gede (ratusan juta+) gak punya spasi
                      buat wrap alami, tanpa ini bisa overflow kepotong di grid 3 kolom sempit --}}
-                <p class="mt-1 font-semibold text-sm sm:text-base tabular-nums break-words {{ $saldoMinus ? 'text-red-700' : 'text-slate-900' }}">
+                <p class="mt-1.5 font-bold text-sm sm:text-lg tabular-nums break-words
+                    {{ $aktif ? 'text-white' : ($saldoMinus ? 'text-red-700' : 'text-slate-900') }}">
                     {{ $saldoMinus ? '-' : '' }}Rp{{ number_format($saldoAbs, 0, ',', '.') }}
                 </p>
                 @if ($saldoMinus)
-                    <p class="mt-0.5 text-[11px] font-medium text-red-600">Saldo minus</p>
+                    <p class="mt-0.5 text-[11px] font-semibold {{ $aktif ? 'text-red-100' : 'text-red-600' }}">Saldo minus</p>
                 @endif
             </button>
         @endforeach
@@ -43,13 +48,13 @@
 
     {{-- Ringkasan hutang-piutang outstanding pembukuan terpilih --}}
     <div class="grid grid-cols-2 gap-3">
-        <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Piutang (belum diterima)</p>
-            <p class="mt-1 text-lg font-semibold text-emerald-700 tabular-nums break-words">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
+            <p class="mt-1 text-lg font-bold text-emerald-700 tabular-nums break-words">Rp{{ number_format($piutangOutstanding, 0, ',', '.') }}</p>
         </div>
-        <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
-            <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
+            <p class="mt-1 text-lg font-bold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
         </div>
     </div>
 
@@ -60,12 +65,12 @@
         </h2>
         <div class="space-y-2">
             @forelse ($riwayat as $item)
-                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between gap-3">
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5 flex items-center justify-between gap-3">
                     <div class="min-w-0">
-                        <p class="text-sm sm:text-base font-medium text-slate-900 truncate">{{ $item['deskripsi'] }}</p>
+                        <p class="text-sm sm:text-base font-semibold text-slate-900 truncate">{{ $item['deskripsi'] }}</p>
                         <p class="text-xs text-slate-500 mt-0.5">{{ $item['tanggal']->translatedFormat('d M Y') }}</p>
                     </div>
-                    <p class="font-semibold shrink-0 tabular-nums break-words text-right {{ $item['arah'] === 'masuk' ? 'text-emerald-700' : 'text-red-700' }}">
+                    <p class="font-bold shrink-0 tabular-nums break-words text-right {{ $item['arah'] === 'masuk' ? 'text-emerald-700' : 'text-red-700' }}">
                         {{ $item['arah'] === 'masuk' ? '+' : '-' }}Rp{{ number_format($item['jumlah'], 0, ',', '.') }}
                     </p>
                 </div>
