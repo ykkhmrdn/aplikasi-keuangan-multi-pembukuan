@@ -7,7 +7,7 @@
 --}}
 @php
     $badgeWarna = [
-        'pribadi' => 'bg-indigo-50 text-indigo-700',
+        'pribadi' => 'bg-blue-50 text-blue-700',
         'usaha' => 'bg-teal-50 text-teal-700',
         'kantor' => 'bg-violet-50 text-violet-700',
     ];

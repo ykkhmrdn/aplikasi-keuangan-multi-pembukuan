@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Akun</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Akun</h1>
 
     <livewire:auth.ubah-username />
 
@@ -13,7 +13,7 @@
         <h2 class="text-sm font-semibold text-slate-900">Ganti Password</h2>
 
         @php
-            $inputClass = 'w-full rounded-lg border border-slate-300 pl-3 pr-10 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
+            $inputClass = 'w-full rounded-lg border border-slate-200 pl-3 pr-10 py-2.5 text-slate-900 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10';
         @endphp
 
         <div x-data="{ tampilkan: false }">
@@ -89,7 +89,7 @@
             type="submit"
             wire:loading.attr="disabled"
             wire:target="simpan"
-            class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white font-medium transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:opacity-50 motion-safe:active:scale-[0.98]"
+            class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-white font-semibold transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30 disabled:opacity-50 motion-safe:active:scale-[0.98]"
         >
             <span wire:loading.remove wire:target="simpan">Simpan Password Baru</span>
             <span wire:loading wire:target="simpan">Memproses...</span>

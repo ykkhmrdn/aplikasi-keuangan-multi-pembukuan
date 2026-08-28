@@ -10,11 +10,11 @@
     $tombolAction   - (opsional) nama method Livewire buat wire:click tombol, mis. "tambah"
 --}}
 <div class="flex items-center justify-between">
-    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">{{ $judul }}</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{{ $judul }}</h1>
     @if (($tombolLabel ?? null) && ! ($showForm ?? false))
         <button
             wire:click="{{ $tombolAction }}"
-            class="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition-all duration-200 hover:shadow-lg hover:shadow-indigo-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/40 motion-safe:active:scale-[0.97]"
+            class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 motion-safe:active:scale-[0.97]"
         >
             {{ $tombolLabel }}
         </button>

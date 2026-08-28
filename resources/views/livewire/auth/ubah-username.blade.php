@@ -18,7 +18,7 @@
                 id="username"
                 wire:model="username"
                 autocomplete="username"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 transition-colors focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-slate-900 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10"
             >
             @error('username') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
@@ -27,7 +27,7 @@
             type="submit"
             wire:loading.attr="disabled"
             wire:target="simpan"
-            class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white font-medium transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 disabled:opacity-50 motion-safe:active:scale-[0.98]"
+            class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-white font-semibold transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30 disabled:opacity-50 motion-safe:active:scale-[0.98]"
         >
             <span wire:loading.remove wire:target="simpan">Simpan Username</span>
             <span wire:loading wire:target="simpan">Memproses...</span>

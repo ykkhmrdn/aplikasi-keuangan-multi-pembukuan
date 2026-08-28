@@ -15,6 +15,6 @@
         type="text"
         wire:model.live.debounce.400ms="search"
         placeholder="{{ $placeholder }}"
-        class="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm text-slate-700 shadow-sm shadow-slate-900/5 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/10"
+        class="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm text-slate-700 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-600/10"
     >
 </div>
