@@ -119,12 +119,6 @@ class Index extends Component
 
     public function simpan(): void
     {
-        // kalau lagi edit bon yang sudah ada pelunasan, jumlah gak boleh diedit
-        // jadi lebih kecil dari total yang udah dibayar (integritas data)
-        $totalPelunasanSaatIni = $this->editingId
-            ? (string) PelunasanHutang::where('hutang_piutang_id', $this->editingId)->sum('jumlah')
-            : '0.00';
-
         $this->validate([
             'dariPembukuanId' => ['required', 'exists:pembukuan,id'],
             'kePembukuanId' => [
@@ -136,14 +130,7 @@ class Index extends Component
                     }
                 },
             ],
-            'jumlah' => [
-                'required', 'numeric', 'min:0.01',
-                function ($attribute, $value, $fail) use ($totalPelunasanSaatIni) {
-                    if ($this->editingId && bccomp((string) $value, $totalPelunasanSaatIni, 2) < 0) {
-                        $fail('Jumlah tidak boleh kurang dari total pelunasan yang sudah dicatat (Rp'.number_format($totalPelunasanSaatIni, 0, ',', '.').').');
-                    }
-                },
-            ],
+            'jumlah' => ['required', 'numeric', 'min:0.01'],
             // batas 10 tahun ke belakang & 1 tahun ke depan, cuma nangkep typo tahun,
             // bukan larangan backdate wajar (lihat alasan lengkap di docs/DECISION_LOG.md)
             'tanggal' => ['required', 'date', 'after_or_equal:'.now()->subYears(10)->format('Y-m-d'), 'before_or_equal:'.now()->addYear()->format('Y-m-d')],
@@ -165,9 +152,28 @@ class Index extends Component
         ];
 
         if ($this->editingId) {
-            $hutangPiutang = $this->hutangPiutangScoped()->findOrFail($this->editingId);
-            $hutangPiutang->update($data);
-            $this->sinkronStatus($hutangPiutang);
+            // jumlah tidak boleh diedit jadi lebih kecil dari total pelunasan yang
+            // sudah dibayar (integritas data). Dicek ULANG di dalam lock, bukan cuma
+            // sebelum validate() - kalau ada pelunasan lain nyelip di antara validasi
+            // dan penyimpanan (race condition), pengecekan pakai data lama bisa lolos
+            // padahal totalnya udah berubah. Pola sama persis dengan simpanPelunasan().
+            try {
+                DB::transaction(function () use ($data) {
+                    $hutangPiutang = $this->hutangPiutangScoped()->whereKey($this->editingId)->lockForUpdate()->firstOrFail();
+                    $totalPelunasanSaatIni = (string) $hutangPiutang->pelunasan()->sum('jumlah');
+
+                    if (bccomp($this->jumlah, $totalPelunasanSaatIni, 2) < 0) {
+                        throw new \RuntimeException('Jumlah tidak boleh kurang dari total pelunasan yang sudah dicatat (Rp'.number_format($totalPelunasanSaatIni, 0, ',', '.').').');
+                    }
+
+                    $hutangPiutang->update($data);
+                    $this->sinkronStatus($hutangPiutang);
+                });
+            } catch (\RuntimeException $e) {
+                $this->addError('jumlah', $e->getMessage());
+
+                return;
+            }
         } else {
             HutangPiutang::create($data);
         }

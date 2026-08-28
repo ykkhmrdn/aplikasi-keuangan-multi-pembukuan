@@ -190,6 +190,40 @@ class IndexTest extends TestCase
             ->assertHasErrors(['jumlah']);
     }
 
+    public function test_edit_dicek_ulang_terhadap_pelunasan_terbaru_bukan_nilai_lama(): void
+    {
+        // simulasi race condition: form edit dibuka & diisi SEBELUM ada pelunasan,
+        // tapi pelunasan lain masuk & tercatat SETELAH itu, SEBELUM form edit disubmit -
+        // pengecekan "jumlah gak boleh kurang dari total pelunasan" harus pakai data
+        // TERBARU (dicek ulang di dalam lock), bukan snapshot lama waktu form dibuka
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $kantor] = $this->buatDuaPembukuan();
+        $hp = HutangPiutang::create([
+            'dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $kantor->id,
+            'jumlah' => 500000, 'tanggal' => now(),
+        ]);
+
+        // form edit dibuka & diisi 450rb - sah pada saat itu, belum ada pelunasan sama sekali
+        $component = Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->call('edit', $hp->id)
+            ->set('jumlah', '450000');
+
+        // "pelunasan lain" masuk & lunas di antara form dibuka dan disubmit (simulasi request bersamaan)
+        Livewire::test(Index::class, ['pembukuan' => $kantor])
+            ->call('melunasi', $hp->id)
+            ->set('jumlahPelunasan', '480000')
+            ->call('simpanPelunasan')
+            ->assertHasNoErrors();
+
+        // form edit yang kepalang keisi 450rb (di bawah 480rb yang baru aja dibayar) disubmit -
+        // harus ditolak, bukan malah lolos dan bikin sisa outstanding jadi minus
+        $component->call('simpan')->assertHasErrors(['jumlah']);
+
+        $hp->refresh();
+        $this->assertEquals('500000.00', $hp->jumlah); // jumlah TIDAK berubah, tetap 500rb
+        $this->assertEquals('20000.00', $hp->sisaOutstanding()); // 500rb - 480rb, bukan minus
+    }
+
     public function test_edit_bon_yang_gak_melibatkan_pembukuan_ini_ditolak(): void
     {
         $this->actingAs(User::factory()->create());

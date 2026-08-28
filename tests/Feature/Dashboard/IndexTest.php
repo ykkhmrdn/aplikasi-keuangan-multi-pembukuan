@@ -159,4 +159,109 @@ class IndexTest extends TestCase
             ->set('tanggalSampai', '2026-08-31')
             ->assertSeeInOrder(['Belanja', 'Rp0']);
     }
+
+    public function test_filter_harian_tidak_menampilkan_transaksi_kemarin(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 100000, 'tanggal' => now()->subDay(),
+        ]);
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 50000, 'tanggal' => now(),
+        ]);
+
+        // default periode 'bulanan' bakal nangkep dua-duanya, ganti ke 'harian' -
+        // transaksi kemarin harus ke-exclude, cuma transaksi hari ini yang kehitung
+        Livewire::test(Dashboard::class)
+            ->set('periode', 'harian')
+            ->assertSeeInOrder(['Belanja', 'Rp50.000']);
+    }
+
+    public function test_filter_bulanan_tidak_menampilkan_transaksi_bulan_lalu(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        // transaksi persis di hari terakhir bulan lalu - kasus pergantian bulan,
+        // gak boleh ketarik ke "Bulan ini" biarpun cuma selisih 1 hari
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 200000,
+            'tanggal' => now()->startOfMonth()->subDay(),
+        ]);
+        // transaksi persis di tanggal 1 bulan ini - harus kehitung (boundary awal bulan)
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 75000,
+            'tanggal' => now()->startOfMonth(),
+        ]);
+
+        Livewire::test(Dashboard::class)
+            ->set('periode', 'bulanan')
+            ->assertSeeInOrder(['Belanja', 'Rp75.000']);
+    }
+
+    public function test_agregasi_analisis_pengeluaran_akurat_untuk_banyak_transaksi_beda_kategori(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $makan = Kategori::create(['nama' => 'Makan & Minum', 'tipe' => TipeTransaksi::Pengeluaran]);
+        $transport = Kategori::create(['nama' => 'Transportasi', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        // 3 transaksi kategori Makan, 2 transaksi kategori Transportasi - total gak boleh
+        // meleset (gak ada double count atau kepotong pas di-groupBy per kategori)
+        foreach ([15000, 22500, 7500] as $jumlah) {
+            Transaksi::create([
+                'pembukuan_id' => $pribadi->id, 'kategori_id' => $makan->id,
+                'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => $jumlah, 'tanggal' => now(),
+            ]);
+        }
+        foreach ([10000, 5000] as $jumlah) {
+            Transaksi::create([
+                'pembukuan_id' => $pribadi->id, 'kategori_id' => $transport->id,
+                'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => $jumlah, 'tanggal' => now(),
+            ]);
+        }
+        // pemasukan gak boleh ikut kehitung ke Analisis Pengeluaran
+        $gaji = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $gaji->id,
+            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 5000000, 'tanggal' => now(),
+        ]);
+
+        // Makan: 15000+22500+7500 = 45000, Transportasi: 10000+5000 = 15000
+        // total pengeluaran keduanya = 60000, jadi persentase 75% & 25% (bukan dihitung
+        // dari total keseluruhan termasuk pemasukan - itu salah, harus cuma dari pengeluaran)
+        Livewire::test(Dashboard::class)
+            ->assertSeeInOrder(['Makan & Minum', 'Rp45.000', '75'])
+            ->assertSeeInOrder(['Transportasi', 'Rp15.000', '25'])
+            ->assertDontSee('Gaji');
+    }
+
+    public function test_filter_semua_waktu_menampilkan_transaksi_lintas_bulan(): void
+    {
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $kategori = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 200000, 'tanggal' => '2020-01-01',
+        ]);
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $kategori->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 75000, 'tanggal' => now(),
+        ]);
+
+        // total gabungan lintas waktu, gak boleh ada yang ke-exclude atau double count
+        Livewire::test(Dashboard::class)
+            ->set('periode', 'semua')
+            ->assertSeeInOrder(['Belanja', 'Rp275.000']);
+    }
 }
