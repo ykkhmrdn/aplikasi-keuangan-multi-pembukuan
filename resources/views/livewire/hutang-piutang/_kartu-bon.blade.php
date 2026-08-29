@@ -6,7 +6,7 @@
     Variabel yang diharapkan: $hp. $melunasiId, $confirmingDeleteId, dst
     tetap property komponen (otomatis kebawa scope).
 --}}
-<div wire:key="hutang-{{ $hp->id }}" class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm">
+<div wire:key="hutang-{{ $hp->id }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
             <p class="text-sm sm:text-base font-medium text-slate-900 truncate">Dari {{ $hp->dariPembukuan->nama }}</p>

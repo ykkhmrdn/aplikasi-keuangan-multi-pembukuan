@@ -48,7 +48,7 @@
     {{-- Hutang outstanding pembukuan terpilih, detail per-item (dari pembukuan mana,
          berapa, sisa berapa) - client minta gak cukup cuma total (meeting 28 Agt 2026).
          Piutang sengaja gak ditampilkan lagi di sini, sesuai permintaan client. --}}
-    <div class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between gap-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
             <p class="text-lg font-bold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>

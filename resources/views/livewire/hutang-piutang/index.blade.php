@@ -9,7 +9,7 @@
 
     {{-- Ringkasan outstanding - Piutang sengaja dihapus dari tampilan (permintaan
          client, lihat docs/DECISION_LOG.md 28 Agt 2026), cuma Hutang yang tersisa --}}
-    <div class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
         <p class="mt-1 text-lg font-semibold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>
     </div>

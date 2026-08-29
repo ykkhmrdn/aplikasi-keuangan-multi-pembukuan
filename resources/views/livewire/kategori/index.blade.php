@@ -105,7 +105,7 @@
     {{-- List kategori --}}
     <div class="space-y-2">
         @forelse ($kategoriList as $kategori)
-            <div wire:key="kategori-{{ $kategori->id }}" class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm shadow-slate-900/5">
+            <div wire:key="kategori-{{ $kategori->id }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-sm sm:text-base font-semibold text-slate-900">{{ $kategori->nama }}</p>
