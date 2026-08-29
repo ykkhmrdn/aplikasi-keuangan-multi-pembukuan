@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Akun</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Akun</h1>
 
     <livewire:auth.ubah-username />
 

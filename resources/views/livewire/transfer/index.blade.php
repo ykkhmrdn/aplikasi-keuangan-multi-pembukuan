@@ -96,7 +96,7 @@
     {{-- Riwayat transfer --}}
     <div class="space-y-2">
         @forelse ($transferList as $transfer)
-            <div wire:key="transfer-{{ $transfer->id }}" class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm shadow-slate-900/5">
+            <div wire:key="transfer-{{ $transfer->id }}" class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm shadow-slate-900/5">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-1.5 flex-wrap">
@@ -143,7 +143,7 @@
                 </div>
             </div>
         @empty
-            <p class="text-sm text-slate-500 text-center py-6">
+            <p class="text-sm text-slate-400 text-center py-6">
                 {{ $search !== '' ? 'Gak ada riwayat transfer yang cocok dengan pencarian.' : 'Belum ada riwayat transfer.' }}
             </p>
         @endforelse

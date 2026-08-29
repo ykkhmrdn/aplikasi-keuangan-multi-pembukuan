@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Dashboard</h1>
 
     {{-- Kartu saldo tiap pembukuan, sekaligus switcher - SIGNATURE ELEMENT aplikasi ini
          (satu-satunya tempat 3 pembukuan tampil sekaligus). Kartu aktif dapet gradient fill
@@ -48,7 +48,7 @@
     {{-- Hutang outstanding pembukuan terpilih, detail per-item (dari pembukuan mana,
          berapa, sisa berapa) - client minta gak cukup cuma total (meeting 28 Agt 2026).
          Piutang sengaja gak ditampilkan lagi di sini, sesuai permintaan client. --}}
-    <div class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/70 p-4 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-blue-50 p-4 shadow-sm">
         <div class="flex items-center justify-between gap-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Hutang (belum dibayar)</p>
             <p class="text-lg font-bold text-red-700 tabular-nums break-words">Rp{{ number_format($hutangOutstanding, 0, ',', '.') }}</p>

@@ -11,11 +11,14 @@
 
         @livewireStyles
     </head>
-    {{-- Putih dominan tapi gak polos - blob dekoratif biru blur besar opacity rendah di
-         background (biru-putih tapi tetap ada kedalaman, bukan flat kosong). --}}
-    <body class="min-h-screen bg-slate-50 relative overflow-x-hidden">
-        <div class="pointer-events-none fixed -z-10 -top-32 -right-32 w-96 h-96 rounded-full bg-blue-200/40 blur-3xl" aria-hidden="true"></div>
-        <div class="pointer-events-none fixed -z-10 -bottom-40 -left-32 w-96 h-96 rounded-full bg-blue-100/50 blur-3xl" aria-hidden="true"></div>
+    {{-- Background gelap navy elegan (permintaan client, lihat docs/DECISION_LOG.md) - header,
+         nav, dan semua card konten TETAP terang/putih di atasnya, cuma latar belakang halaman
+         yang diganti gelap. Blob cahaya biru/cyan blur besar opacity rendah biar ada kesan
+         "flowing light" kayak referensi, bukan gelap polos rata. --}}
+    <body class="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-x-hidden">
+        <div class="pointer-events-none fixed -z-10 -top-32 -right-32 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl" aria-hidden="true"></div>
+        <div class="pointer-events-none fixed -z-10 -bottom-40 -left-32 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl" aria-hidden="true"></div>
+        <div class="pointer-events-none fixed -z-10 top-1/3 left-1/2 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl" aria-hidden="true"></div>
         @php
             $navItems = [
                 ['route' => 'dashboard', 'params' => [], 'active' => request()->routeIs('dashboard'), 'label' => 'Dashboard'],
