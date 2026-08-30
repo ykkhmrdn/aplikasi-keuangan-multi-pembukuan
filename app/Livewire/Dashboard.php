@@ -34,9 +34,18 @@ class Dashboard extends Component
         $this->pembukuanTerpilihId = Pembukuan::orderBy('id')->value('id');
     }
 
+    /**
+     * ID yang dikirim divalidasi dulu - kalau bukan salah satu dari 3 pembukuan
+     * yang ada, diabaikan (bukan diproses jadi error). Tanpa ini, ID sembarangan
+     * (mis. dikirim manual ke endpoint Livewire, bukan lewat klik kartu di UI)
+     * bikin render() fatal error karena firstWhere() dapat null - ditemukan &
+     * diperbaiki di audit QA 29 Agt 2026, lihat docs/DECISION_LOG.md.
+     */
     public function pilihPembukuan(int $id): void
     {
-        $this->pembukuanTerpilihId = $id;
+        if (Pembukuan::whereKey($id)->exists()) {
+            $this->pembukuanTerpilihId = $id;
+        }
     }
 
     public function updatedPeriode(): void

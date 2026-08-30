@@ -67,10 +67,15 @@ class Pembukuan extends Model
     }
 
     /**
-     * Saldo dihitung dinamis, bukan kolom cache (lihat docs/DATABASE_DESIGN.md
-     * bagian "Formula Saldo" untuk rincian lengkap tiap komponen).
+     * Total uang masuk & keluar sepanjang waktu (all-time, bukan per-periode seperti
+     * filter di Analisis Pengeluaran Dashboard). Dipisah dari saldo() supaya query yang
+     * sama bisa dipakai bareng buat dua kebutuhan (saldo, dan kartu Income/Outcome di
+     * Dashboard - permintaan revisi client 29 Agt 2026, lihat docs/DECISION_LOG.md)
+     * tanpa nge-query dua kali. saldo() = masuk - keluar, harus selalu konsisten.
+     *
+     * @return array{masuk: string, keluar: string}
      */
-    public function saldo(): string
+    public function masukKeluar(): array
     {
         $pemasukan = (string) $this->transaksi()->where('tipe', TipeTransaksi::Pemasukan)->sum('jumlah');
         $pengeluaran = (string) $this->transaksi()->where('tipe', TipeTransaksi::Pengeluaran)->sum('jumlah');
@@ -91,7 +96,18 @@ class Pembukuan extends Model
         $masuk = bcadd(bcadd($pemasukan, $transferMasuk, 2), bcadd($bonDiterima, $terimaPelunasan, 2), 2);
         $keluar = bcadd(bcadd($pengeluaran, $transferKeluar, 2), bcadd($bonDiberikan, $bayarUtang, 2), 2);
 
-        return bcsub($masuk, $keluar, 2);
+        return ['masuk' => $masuk, 'keluar' => $keluar];
+    }
+
+    /**
+     * Saldo dihitung dinamis, bukan kolom cache (lihat docs/DATABASE_DESIGN.md
+     * bagian "Formula Saldo" untuk rincian lengkap tiap komponen).
+     */
+    public function saldo(): string
+    {
+        $mk = $this->masukKeluar();
+
+        return bcsub($mk['masuk'], $mk['keluar'], 2);
     }
 
     /** Total hutang outstanding (bon yang diterima, belum dilunasi ke lawan). */

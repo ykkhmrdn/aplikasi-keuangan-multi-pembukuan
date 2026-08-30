@@ -4,12 +4,23 @@
     {{-- Kartu saldo tiap pembukuan, sekaligus switcher - SIGNATURE ELEMENT aplikasi ini
          (satu-satunya tempat 3 pembukuan tampil sekaligus). Kartu aktif dapet gradient fill
          biru + shadow biru, kartu non-aktif tetap putih/quiet. Warna Usaha/Kantor
-         (teal/violet) dipertahankan buat bedain identitas 3 pembukuan. --}}
+         (teal/violet) dipertahankan buat bedain identitas 3 pembukuan.
+
+         Tiap kartu juga punya tombol info kecil (ikon "i") yang buka detail Income/Outcome
+         all-time inline di dalam kartu - permintaan revisi client 29 Agt 2026 (lihat
+         docs/DECISION_LOG.md). Karena butuh tombol terpisah di dalam kartu (info toggle)
+         selain aksi utama (pilih pembukuan), elemen kartu diganti dari <button> jadi <div
+         role="button"> - <button> di dalam <button> gak valid HTML. Keyboard nav (Enter/
+         Space buat pilih pembukuan) ditambahkan manual biar gak kehilangan aksesibilitas
+         yang tadinya gratis dari elemen <button> asli. --}}
     <div class="grid grid-cols-3 gap-3">
         @foreach ($pembukuanList as $p)
             @php
                 $aktif = $pembukuanTerpilih->id === $p->id;
-                $saldo = $p->saldo();
+                // masukKeluar() sekali query, dipakai bareng buat saldo DAN Income/Outcome -
+                // biar gak nge-query dua kali hal yang sama (lihat Pembukuan::masukKeluar())
+                $mk = $p->masukKeluar();
+                $saldo = bcsub($mk['masuk'], $mk['keluar'], 2);
                 // saldo minus tetap boleh (bukan salah otomatis - bisa defisit beneran atau
                 // input transaksi gak urut tanggal), tapi tetap harus keliatan jelas, bukan
                 // didiemin pakai warna sama kayak saldo positif
@@ -21,18 +32,42 @@
                     \App\Enums\TipePembukuan::Kantor => ['dot' => 'bg-violet-500', 'gradient' => 'bg-gradient-to-br from-violet-600 to-violet-500', 'shadow' => 'shadow-lg shadow-violet-600/25', 'label' => 'text-violet-100'],
                 };
             @endphp
-            <button
+            <div
+                x-data="{ showDetail: false }"
                 wire:click="pilihPembukuan({{ $p->id }})"
-                class="relative min-w-0 rounded-xl py-3.5 px-3.5 text-left transition-all duration-200 motion-safe:active:scale-[0.97]
+                @keydown.enter="$wire.pilihPembukuan({{ $p->id }})"
+                @keydown.space.prevent="$wire.pilihPembukuan({{ $p->id }})"
+                role="button"
+                tabindex="0"
+                aria-pressed="{{ $aktif ? 'true' : 'false' }}"
+                class="relative min-w-0 rounded-xl py-3.5 px-3.5 text-left transition-all duration-200 motion-safe:active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40
                     {{ $aktif ? $accent['gradient'].' '.$accent['shadow'] : 'bg-white border border-slate-200 shadow-sm hover:border-slate-300' }}"
             >
-                <p class="flex items-center gap-1.5 text-xs font-medium {{ $aktif ? $accent['label'] : 'text-slate-500' }}">
-                    @unless ($aktif)
-                        <span class="inline-block w-1.5 h-1.5 rounded-full {{ $accent['dot'] }}"></span>
-                    @endunless
-                    {{ $p->nama }}
-                </p>
-                {{-- break-words + min-w-0 di button: angka gede (ratusan juta+) gak punya spasi
+                <div class="flex items-start justify-between gap-1">
+                    <p class="flex items-center gap-1.5 text-xs font-medium min-w-0 {{ $aktif ? $accent['label'] : 'text-slate-500' }}">
+                        @unless ($aktif)
+                            <span class="inline-block w-1.5 h-1.5 rounded-full shrink-0 {{ $accent['dot'] }}"></span>
+                        @endunless
+                        <span class="truncate">{{ $p->nama }}</span>
+                    </p>
+                    {{-- tombol info Income/Outcome - @click.stop wajib, biar gak ikut trigger
+                         pilihPembukuan() di div pembungkus --}}
+                    <button
+                        type="button"
+                        @click.stop="showDetail = !showDetail"
+                        :aria-label="showDetail ? 'Sembunyikan detail income dan outcome {{ $p->nama }}' : 'Lihat detail income dan outcome {{ $p->nama }}'"
+                        :aria-expanded="showDetail.toString()"
+                        class="shrink-0 -mt-1 -mr-1 w-6 h-6 flex items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40
+                            {{ $aktif ? 'text-white/70 hover:bg-white/10' : 'text-slate-400 hover:bg-slate-100' }}"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-3.5 h-3.5">
+                            <circle cx="12" cy="12" r="9" />
+                            <path stroke-linecap="round" d="M12 11v5M12 8h.01" />
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- break-words + min-w-0 di kartu: angka gede (ratusan juta+) gak punya spasi
                      buat wrap alami, tanpa ini bisa overflow kepotong di grid 3 kolom sempit --}}
                 <p class="mt-1.5 font-bold text-sm sm:text-lg tabular-nums break-words
                     {{ $aktif ? 'text-white' : ($saldoMinus ? 'text-red-700' : 'text-slate-900') }}">
@@ -41,7 +76,26 @@
                 @if ($saldoMinus)
                     <p class="mt-0.5 text-[11px] font-semibold {{ $aktif ? 'text-red-100' : 'text-red-600' }}">Saldo minus</p>
                 @endif
-            </button>
+
+                {{-- Detail Income/Outcome, all-time (bukan per-periode) - toggle lokal Alpine,
+                     gak perlu round-trip Livewire karena datanya udah kekirim dari render(). --}}
+                <div
+                    x-show="showDetail"
+                    x-cloak
+                    x-transition
+                    @click.stop
+                    class="mt-2 pt-2 border-t space-y-0.5 {{ $aktif ? 'border-white/25' : 'border-slate-100' }}"
+                >
+                    <p class="flex items-center justify-between gap-1 text-[11px] {{ $aktif ? 'text-white/90' : 'text-slate-600' }}">
+                        <span>Income</span>
+                        <span class="font-semibold tabular-nums break-all text-right">Rp{{ number_format($mk['masuk'], 0, ',', '.') }}</span>
+                    </p>
+                    <p class="flex items-center justify-between gap-1 text-[11px] {{ $aktif ? 'text-white/90' : 'text-slate-600' }}">
+                        <span>Outcome</span>
+                        <span class="font-semibold tabular-nums break-all text-right">Rp{{ number_format($mk['keluar'], 0, ',', '.') }}</span>
+                    </p>
+                </div>
+            </div>
         @endforeach
     </div>
 

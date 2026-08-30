@@ -8,6 +8,7 @@ use App\Models\HutangPiutang;
 use App\Models\Kategori;
 use App\Models\Pembukuan;
 use App\Models\Transaksi;
+use App\Models\TransferSaldo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -100,6 +101,20 @@ class IndexTest extends TestCase
             ->call('pilihPembukuan', $usaha->id)
             ->assertSet('pembukuanTerpilihId', $usaha->id)
             ->assertSee('&mdash; Usaha', false);
+    }
+
+    public function test_pilih_pembukuan_dengan_id_gak_valid_diabaikan_bukan_error(): void
+    {
+        // ditemukan di audit QA 29 Agt 2026 - ID sembarangan (mis. dikirim manual ke
+        // endpoint Livewire, bukan lewat klik kartu di UI) sebelumnya bikin fatal error
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+
+        Livewire::test(Dashboard::class)
+            ->assertSet('pembukuanTerpilihId', $pribadi->id)
+            ->call('pilihPembukuan', 99999) // ID gak exist
+            ->assertOk()
+            ->assertSet('pembukuanTerpilihId', $pribadi->id); // gak berubah, diabaikan
     }
 
     public function test_hutang_detail_menampilkan_item_per_pembukuan(): void
@@ -242,6 +257,71 @@ class IndexTest extends TestCase
             ->assertSeeInOrder(['Makan & Minum', 'Rp45.000', '75'])
             ->assertSeeInOrder(['Transportasi', 'Rp15.000', '25'])
             ->assertDontSee('Gaji');
+    }
+
+    public function test_kartu_menampilkan_detail_income_outcome(): void
+    {
+        // revisi post-closure 29 Agt 2026, lihat docs/DECISION_LOG.md
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+        $gaji = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+        $belanja = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $gaji->id,
+            'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 1000000, 'tanggal' => now(),
+        ]);
+        Transaksi::create([
+            'pembukuan_id' => $pribadi->id, 'kategori_id' => $belanja->id,
+            'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 300000, 'tanggal' => now(),
+        ]);
+
+        // x-show Alpine cuma toggle display CSS di client - HTML detail tetap kekirim
+        // dari server terlepas dari state showDetail, jadi assertSee tetap valid dites di sini
+        Livewire::test(Dashboard::class)
+            ->assertSee('Income')
+            ->assertSee('Outcome')
+            ->assertSee('1.000.000')
+            ->assertSee('300.000');
+    }
+
+    public function test_income_outcome_konsisten_dengan_saldo(): void
+    {
+        // requirement eksplisit: Income - Outcome harus selalu sama persis dengan saldo()
+        $this->actingAs(User::factory()->create());
+        [$pribadi, $usaha] = $this->buatPembukuan();
+        $gaji = Kategori::create(['nama' => 'Gaji', 'tipe' => TipeTransaksi::Pemasukan]);
+        $belanja = Kategori::create(['nama' => 'Belanja', 'tipe' => TipeTransaksi::Pengeluaran]);
+
+        Transaksi::create(['pembukuan_id' => $pribadi->id, 'kategori_id' => $gaji->id, 'tipe' => TipeTransaksi::Pemasukan, 'jumlah' => 500000, 'tanggal' => now()]);
+        Transaksi::create(['pembukuan_id' => $pribadi->id, 'kategori_id' => $belanja->id, 'tipe' => TipeTransaksi::Pengeluaran, 'jumlah' => 150000, 'tanggal' => now()]);
+        TransferSaldo::create(['dari_pembukuan_id' => $pribadi->id, 'ke_pembukuan_id' => $usaha->id, 'jumlah' => 50000, 'tanggal' => now()]);
+        HutangPiutang::create(['dari_pembukuan_id' => $usaha->id, 'ke_pembukuan_id' => $pribadi->id, 'jumlah' => 20000, 'tanggal' => now()]);
+
+        $mk = $pribadi->fresh()->masukKeluar();
+        $saldoDariIncomeOutcome = bcsub($mk['masuk'], $mk['keluar'], 2);
+
+        $this->assertEquals($saldoDariIncomeOutcome, $pribadi->fresh()->saldo());
+        // 500rb pemasukan + 20rb terima bon = 520rb, 150rb pengeluaran + 50rb transfer keluar = 200rb
+        $this->assertEquals('520000.00', $mk['masuk']);
+        $this->assertEquals('200000.00', $mk['keluar']);
+    }
+
+    public function test_income_outcome_nol_saat_belum_ada_transaksi(): void
+    {
+        // edge case wajib: pembukuan kosong gak boleh error (mis. division by zero)
+        $this->actingAs(User::factory()->create());
+        [$pribadi] = $this->buatPembukuan();
+
+        $mk = $pribadi->masukKeluar();
+
+        $this->assertEquals('0.00', $mk['masuk']);
+        $this->assertEquals('0.00', $mk['keluar']);
+
+        Livewire::test(Dashboard::class)
+            ->assertOk()
+            ->assertSee('Income')
+            ->assertSee('Outcome');
     }
 
     public function test_filter_semua_waktu_menampilkan_transaksi_lintas_bulan(): void
